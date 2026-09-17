@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2ead9">
+<title>Diamant — votre discothèque</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2248%22 fill=%22%231c1a18%22/><circle cx=%2250%22 cy=%2250%22 r=%2216%22 fill=%22%23f2ead9%22/><circle cx=%2250%22 cy=%2250%22 r=%225%22 fill=%22%231c1a18%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== Header ===== -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-disc" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="48" fill="#1c1a18"/>
+        <circle cx="50" cy="50" r="47" fill="none" stroke="#3a3530" stroke-width="0.6"/>
+        <circle cx="50" cy="50" r="39" fill="none" stroke="#3a3530" stroke-width="0.6"/>
+        <circle cx="50" cy="50" r="31" fill="none" stroke="#3a3530" stroke-width="0.6"/>
+        <circle cx="50" cy="50" r="16" fill="#b6432c"/>
+        <circle cx="50" cy="50" r="4" fill="#f2ead9"/>
+      </svg>
+      <div class="brand-text">
+        <h1>Diamant</h1>
+        <p>votre discothèque, à la main</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== RECHERCHE ===== -->
+  <section class="panel" id="panel-recherche" data-panel>
+    <div class="subtabs" role="tablist" aria-label="Source de recherche">
+      <button class="subtab is-active" data-subtab="carte" type="button">Autour de moi</button>
+      <button class="subtab" data-subtab="discogs" type="button">Discogs</button>
+      <button class="subtab" data-subtab="leboncoin" type="button">Leboncoin</button>
+      <button class="subtab" data-subtab="fnac" type="button">Fnac</button>
+    </div>
+
+    <!-- Carte -->
+    <div class="subpanel is-active" data-subpanel="carte">
+      <div class="card locate-card">
+        <p class="hint">Trouvez les disquaires autour de vous, à partir des données OpenStreetMap.</p>
+        <button class="btn btn-primary" id="btn-locate" type="button">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+          Me localiser
+        </button>
+        <p class="status" id="locate-status"></p>
+      </div>
+      <div id="map"></div>
+      <ul class="shop-list" id="shop-list"></ul>
+    </div>
+
+    <!-- Discogs -->
+    <div class="subpanel" data-subpanel="discogs">
+      <form class="search-form" data-external="discogs">
+        <input type="search" placeholder="Artiste, album, référence…" required>
+        <button type="submit" class="btn btn-primary">Chercher sur Discogs</button>
+      </form>
+      <p class="hint">Ouvre les résultats Discogs dans un nouvel onglet.</p>
+    </div>
+
+    <!-- Leboncoin -->
+    <div class="subpanel" data-subpanel="leboncoin">
+      <form class="search-form" data-external="leboncoin">
+        <input type="search" placeholder="Artiste, album, référence…" required>
+        <button type="submit" class="btn btn-primary">Chercher sur Leboncoin</button>
+      </form>
+      <p class="hint">Ouvre les résultats Leboncoin (catégorie Vinyles) dans un nouvel onglet.</p>
+    </div>
+
+    <!-- Fnac -->
+    <div class="subpanel" data-subpanel="fnac">
+      <form class="search-form" data-external="fnac">
+        <input type="search" placeholder="Artiste, album, référence…" required>
+        <button type="submit" class="btn btn-primary">Chercher sur Fnac</button>
+      </form>
+      <p class="hint">Ouvre les résultats Fnac (rayon Vinyles) dans un nouvel onglet.</p>
+    </div>
+  </section>
+
+  <!-- ===== SCANNER ===== -->
+  <section class="panel" id="panel-scanner" data-panel hidden>
+    <div class="card scan-card" id="scan-idle">
+      <svg viewBox="0 0 24 24" class="icon-lg"><path d="M4 7a2 2 0 0 1 2-2h1.2l.9-1.2A2 2 0 0 1 9.7 3h4.6a2 2 0 0 1 1.6.8L16.8 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><circle cx="12" cy="13" r="3.6" fill="#f2ead9"/></svg>
+      <p class="hint">Scannez une pochette pour l'ajouter rapidement à votre collection.</p>
+      <button class="btn btn-primary" id="btn-open-camera" type="button">Ouvrir l'appareil photo</button>
+      <p class="status" id="camera-status"></p>
+    </div>
+
+    <div class="camera-wrap" id="camera-wrap" hidden>
+      <video id="camera-video" playsinline autoplay muted></video>
+      <div class="camera-actions">
+        <button class="btn btn-ghost" id="btn-close-camera" type="button">Annuler</button>
+        <button class="btn btn-capture" id="btn-capture" type="button" aria-label="Capturer">
+          <span></span>
+        </button>
+      </div>
+    </div>
+
+    <canvas id="capture-canvas" hidden></canvas>
+
+    <div class="card analyzing-card" id="analyzing-card" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Analyse de la pochette…</p>
+    </div>
+  </section>
+
+  <!-- ===== COLLECTION ===== -->
+  <section class="panel" id="panel-collection" data-panel hidden>
+    <div class="collection-toolbar">
+      <button class="btn btn-primary btn-add" id="btn-add-manual" type="button">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+        Ajouter un disque
+      </button>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label for="filter-year-min">Année</label>
+        <div class="year-range">
+          <input type="number" id="filter-year-min" placeholder="Min" inputmode="numeric">
+          <span>—</span>
+          <input type="number" id="filter-year-max" placeholder="Max" inputmode="numeric">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label for="filter-genre">Style</label>
+        <select id="filter-genre">
+          <option value="">Tous les styles</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Gommette</label>
+        <div class="dot-filters" id="dot-filters"></div>
+      </div>
+    </div>
+
+    <p class="empty-state" id="collection-empty" hidden>Votre bac à disques est vide pour l'instant. Scannez ou ajoutez un vinyle pour commencer.</p>
+    <div class="record-grid" id="record-grid"></div>
+  </section>
+
+  <!-- ===== Bottom nav ===== -->
+  <nav class="bottombar" aria-label="Navigation principale">
+    <button class="navbtn is-active" data-panel-target="panel-recherche" type="button">
+      <svg viewBox="0 0 24 24" class="icon"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4z"/></svg>
+      <span>Recherche</span>
+    </button>
+    <button class="navbtn" data-panel-target="panel-scanner" type="button">
+      <svg viewBox="0 0 24 24" class="icon"><path d="M4 7a2 2 0 0 1 2-2h1.2l.9-1.2A2 2 0 0 1 9.7 3h4.6a2 2 0 0 1 1.6.8L16.8 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><circle cx="12" cy="13" r="3.2" fill="#f2ead9"/></svg>
+      <span>Scanner</span>
+    </button>
+    <button class="navbtn" data-panel-target="panel-collection" type="button">
+      <svg viewBox="0 0 24 24" class="icon"><path d="M3 4h18v3H3V4zm1 5h16l-1.5 11h-13L4 9zm5 2v6h1.6v-6H9zm4.4 0v6H15v-6h-1.6z"/></svg>
+      <span>Collection</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ===== Record detail / edit modal ===== -->
+<div class="modal-backdrop" id="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-close" id="modal-close" type="button" aria-label="Fermer">✕</button>
+    <div class="modal-cover" id="modal-cover"></div>
+    <p class="demo-badge" id="demo-badge" hidden>Suggestion automatique — démo, à vérifier</p>
+    <form id="record-form">
+      <label>Artiste
+        <input type="text" name="artist" required placeholder="Ex : Nina Simone">
+      </label>
+      <label>Album
+        <input type="text" name="title" required placeholder="Ex : Wild Is the Wind">
+      </label>
+      <div class="form-row">
+        <label>Année
+          <input type="number" name="year" placeholder="1966" min="1900" max="2099">
+        </label>
+        <label>Style
+          <input type="text" name="genre" placeholder="Jazz, Soul…" list="genre-suggestions">
+        </label>
+      </div>
+      <datalist id="genre-suggestions"></datalist>
+      <label class="field-label-block">Gommette
+        <div class="dot-picker" id="dot-picker"></div>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="btn-delete-record" hidden>Supprimer</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
