@@ -6,13 +6,226 @@
 const STORAGE_KEY = 'diamant.collection.v1';
 
 const DOT_COLORS = [
-  { key: 'red', label: 'Coup de cœur', var: '--dot-red' },
-  { key: 'mustard', label: 'À écouter', var: '--dot-mustard' },
-  { key: 'green', label: 'Complet', var: '--dot-green' },
-  { key: 'blue', label: 'Prêté', var: '--dot-blue' },
-  { key: 'plum', label: 'À vendre', var: '--dot-plum' },
-  { key: 'terracotta', label: 'Rare', var: '--dot-terracotta' },
+  { key: 'red', labelKey: 'dot_red', var: '--dot-red' },
+  { key: 'mustard', labelKey: 'dot_mustard', var: '--dot-mustard' },
+  { key: 'green', labelKey: 'dot_green', var: '--dot-green' },
+  { key: 'blue', labelKey: 'dot_blue', var: '--dot-blue' },
+  { key: 'plum', labelKey: 'dot_plum', var: '--dot-plum' },
+  { key: 'terracotta', labelKey: 'dot_terracotta', var: '--dot-terracotta' },
 ];
+
+/* =========================================================
+   Internationalisation — anglais par défaut, français en option
+   ========================================================= */
+const LANG_STORAGE = 'diamant.lang';
+
+const I18N = {
+  en: {
+    page_title: 'Diamant — your record shop',
+    tagline: 'Local & Online Record Shop',
+    settings_aria: 'Settings',
+    home_cta: 'Start to dig :',
+    nav_search: 'Search',
+    nav_scan: 'Scan',
+    search_placeholder: 'Search for an artist, an album, a record shop…',
+    btn_search: 'Search',
+    browse_city_label: 'Browse a city:',
+    btn_relocate: 'Refresh my location',
+    locate_unsupported: "Geolocation isn't available on this device.",
+    locate_loading: 'Locating…',
+    locate_denied: 'Location denied or unavailable. Allow location access to see nearby record shops.',
+    shops_loading: 'Looking for nearby record shops…',
+    shops_none: 'No record shop referenced on OpenStreetMap within 5 km.',
+    shops_found: '{n} record shop(s) found within 5 km.',
+    shops_error: "Couldn't reach the mapping service right now.",
+    shop_unnamed: 'Record shop',
+    shop_no_address: 'Address not provided',
+    directions: 'Directions →',
+    results_for: 'Results for « {query} »',
+    results_demo_badge: 'Demo results — to be connected to a real data source',
+    results_empty: 'No result in our demo catalog for « {query} ». This catalog only illustrates a handful of records, until a real data source is available.',
+    back_aria: 'Back',
+    close_aria: 'Close',
+    capture_aria: 'Capture',
+    vinyl_demo_badge: 'Demo map and record shops — to be connected to a real data source',
+    vinyl_local_label: 'Vinyl available locally:',
+    vinyl_online_label: 'Vinyl available online:',
+    vinyl_availability_demo: '{km} km · fictional availability (demo)',
+    link_view_on: 'View on {source}',
+    shop_phone_unknown: 'Phone number not provided',
+    shop_website_unknown: 'Website not provided',
+    shop_filter_placeholder: 'Filter their record collection…',
+    shop_inventory_empty: "This record shop hasn't shared their catalog online here yet.",
+    shop_inventory_hint: 'In the meantime, search their references on:',
+    camera_unavailable: "Camera isn't available — fill in the details manually.",
+    camera_denied: 'Camera access denied — fill in the details manually.',
+    demo_badge_no_key: 'Automatic suggestion — demo, please check (no Vision key configured)',
+    vision_analyzing: 'Analyzing the cover via Google Vision…',
+    vision_badge: 'Automatic suggestion (Google Vision image analysis) — please check',
+    vision_no_match: 'No match found for this cover — fill in the details manually.',
+    vision_error: 'Error during analysis (invalid key, quota exceeded, or network) — fill in the details manually.',
+    field_artist: 'Artist',
+    field_album: 'Album',
+    field_year: 'Year',
+    field_genre: 'Style',
+    field_sticker: 'Sticker',
+    placeholder_artist: 'E.g.: Nina Simone',
+    placeholder_album: 'E.g.: Wild Is the Wind',
+    btn_delete: 'Delete',
+    btn_save: 'Save',
+    btn_add_record: 'Add a record',
+    filter_year: 'Year',
+    filter_style: 'Style',
+    filter_all_styles: 'All styles',
+    filter_sticker: 'Sticker',
+    collection_empty: 'Your crate is empty for now. Scan or add a record to get started.',
+    unknown_artist: 'Unknown artist',
+    untitled: 'Untitled',
+    dot_none: 'None',
+    dot_all: 'All',
+    dot_red: 'Favorite',
+    dot_mustard: 'To listen',
+    dot_green: 'Complete',
+    dot_blue: 'Lent out',
+    dot_plum: 'For sale',
+    dot_terracotta: 'Rare',
+    settings_title: 'Settings',
+    settings_language_label: 'Language',
+    settings_hint_html: 'For real cover recognition when scanning, connect a <strong>Google Cloud Vision API</strong> key (paid beyond a small free quota). A shared demo key is already active — you can use your own instead.',
+    settings_key_label: 'Google Cloud Vision API key',
+    settings_key_placeholder: 'Paste your key here',
+    settings_privacy_hint: "This key stays only in this browser (local storage) — it's only ever sent to Google's API, directly from your device. Remember to restrict it in Google Cloud console (Vision API only + allowed domain) and set a budget alert.",
+    settings_saved: 'Key saved on this device.',
+    settings_cleared: 'No personal key saved — using the shared demo key.',
+    btn_clear_key: 'Remove key',
+    preview_searching: 'Looking for a preview…',
+    preview_none: 'No audio preview found for this album.',
+    preview_playing: 'Now playing: {track} (30 s, via iTunes)',
+    preview_unavailable: 'Audio preview unavailable right now.',
+  },
+  fr: {
+    page_title: 'Diamant — votre discothèque',
+    tagline: 'Local & Online Discothèque',
+    settings_aria: 'Réglages',
+    home_cta: 'Commence à fouiller :',
+    nav_search: 'Recherche',
+    nav_scan: 'Scanner',
+    search_placeholder: 'Chercher une artiste, un album, un disquaire…',
+    btn_search: 'Rechercher',
+    browse_city_label: 'Parcourir une ville :',
+    btn_relocate: 'Actualiser ma position',
+    locate_unsupported: "La géolocalisation n'est pas disponible sur cet appareil.",
+    locate_loading: 'Localisation en cours…',
+    locate_denied: "Localisation refusée ou indisponible. Autorisez l'accès à la position pour voir les disquaires proches.",
+    shops_loading: 'Recherche des disquaires à proximité…',
+    shops_none: 'Aucun disquaire référencé sur OpenStreetMap dans un rayon de 5 km.',
+    shops_found: '{n} disquaire(s) trouvé(s) dans un rayon de 5 km.',
+    shops_error: 'Impossible de contacter le service de cartographie pour le moment.',
+    shop_unnamed: 'Disquaire',
+    shop_no_address: 'Adresse non renseignée',
+    directions: 'Itinéraire →',
+    results_for: 'Résultats pour « {query} »',
+    results_demo_badge: 'Résultats de démonstration — à connecter à une vraie source de données',
+    results_empty: "Aucun résultat dans notre catalogue de démonstration pour « {query} ». Ce catalogue n'illustre que quelques disques, en attendant une vraie source de données.",
+    back_aria: 'Retour',
+    close_aria: 'Fermer',
+    capture_aria: 'Capturer',
+    vinyl_demo_badge: 'Carte et disquaires de démonstration — à connecter à une vraie source de données',
+    vinyl_local_label: 'Vinyle disponible en local :',
+    vinyl_online_label: 'Vinyle disponible en ligne :',
+    vinyl_availability_demo: '{km} km · disponibilité fictive (démo)',
+    link_view_on: 'Voir sur {source}',
+    shop_phone_unknown: 'Numéro non renseigné',
+    shop_website_unknown: 'Site web non renseigné',
+    shop_filter_placeholder: 'Filtrer sa discothèque…',
+    shop_inventory_empty: "Ce disquaire n'a pas encore partagé son catalogue en ligne ici.",
+    shop_inventory_hint: 'En attendant, cherchez ses références sur :',
+    camera_unavailable: "La caméra n'est pas disponible — renseignez les informations manuellement.",
+    camera_denied: 'Accès à la caméra refusé — renseignez les informations manuellement.',
+    demo_badge_no_key: 'Suggestion automatique — démo, à vérifier (aucune clé Vision configurée)',
+    vision_analyzing: 'Analyse de la pochette via Google Vision…',
+    vision_badge: "Suggestion automatique (analyse d'image Google Vision) — à vérifier",
+    vision_no_match: 'Aucune correspondance trouvée pour cette pochette — renseignez les informations manuellement.',
+    vision_error: "Erreur lors de l'analyse (clé invalide, quota dépassé ou réseau) — renseignez les informations manuellement.",
+    field_artist: 'Artiste',
+    field_album: 'Album',
+    field_year: 'Année',
+    field_genre: 'Style',
+    field_sticker: 'Gommette',
+    placeholder_artist: 'Ex : Nina Simone',
+    placeholder_album: 'Ex : Wild Is the Wind',
+    btn_delete: 'Supprimer',
+    btn_save: 'Enregistrer',
+    btn_add_record: 'Ajouter un disque',
+    filter_year: 'Année',
+    filter_style: 'Style',
+    filter_all_styles: 'Tous les styles',
+    filter_sticker: 'Gommette',
+    collection_empty: "Votre bac à disques est vide pour l'instant. Scannez ou ajoutez un vinyle pour commencer.",
+    unknown_artist: 'Artiste inconnu',
+    untitled: 'Sans titre',
+    dot_none: 'Aucune',
+    dot_all: 'Toutes',
+    dot_red: 'Coup de cœur',
+    dot_mustard: 'À écouter',
+    dot_green: 'Complet',
+    dot_blue: 'Prêté',
+    dot_plum: 'À vendre',
+    dot_terracotta: 'Rare',
+    settings_title: 'Réglages',
+    settings_language_label: 'Langue',
+    settings_hint_html: "Pour une vraie reconnaissance de pochette au scan, branche une clé <strong>Google Cloud Vision API</strong> (payante au-delà d'un petit quota gratuit). Une clé démo partagée est déjà active — tu peux utiliser la tienne à la place.",
+    settings_key_label: 'Clé API Google Cloud Vision',
+    settings_key_placeholder: 'Colle ta clé ici',
+    settings_privacy_hint: "Cette clé reste uniquement dans ce navigateur (stockage local) — elle n'est jamais envoyée ailleurs qu'à l'API Google, directement depuis ton appareil. Pense à la restreindre dans la console Google Cloud (API Vision uniquement + domaine autorisé) et à fixer une alerte de budget.",
+    settings_saved: 'Clé enregistrée sur cet appareil.',
+    settings_cleared: 'Aucune clé personnelle enregistrée — utilisation de la clé démo partagée.',
+    btn_clear_key: 'Supprimer la clé',
+    preview_searching: "Recherche d'un extrait…",
+    preview_none: 'Aucun extrait audio trouvé pour cet album.',
+    preview_playing: 'Extrait en écoute : {track} (30 s, via iTunes)',
+    preview_unavailable: 'Extrait audio indisponible pour le moment.',
+  },
+};
+
+let currentLang = (function () {
+  try { return localStorage.getItem(LANG_STORAGE) || 'en'; } catch (e) { return 'en'; }
+})();
+
+function t(key, params) {
+  const dict = I18N[currentLang] || I18N.en;
+  let str = dict[key] ?? I18N.en[key] ?? key;
+  if (params) {
+    Object.keys(params).forEach((p) => {
+      str = str.replace(`{${p}}`, params[p]);
+    });
+  }
+  return str;
+}
+
+function applyI18n() {
+  document.getElementById('html-root').lang = currentLang;
+  document.title = t('page_title');
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  const hintEl = document.getElementById('settings-hint');
+  if (hintEl) hintEl.innerHTML = t('settings_hint_html');
+  buildDotFilters();
+  renderCollection();
+}
+
+function setLanguage(lang) {
+  currentLang = I18N[lang] ? lang : 'en';
+  try { localStorage.setItem(LANG_STORAGE, currentLang); } catch (e) { /* ignore */ }
+  applyI18n();
+}
 
 function loadCollection() {
   try {
@@ -72,19 +285,28 @@ function seedDemoCollectionIfNeeded() {
    ========================================================= */
 const panels = document.querySelectorAll('[data-panel]');
 const navButtons = document.querySelectorAll('.navbtn');
+const bottombar = document.querySelector('.bottombar');
+let hasAutoLocated = false;
 
-navButtons.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const target = btn.dataset.panelTarget;
-    const isScanAction = btn.dataset.action === 'scan';
-    panels.forEach((p) => { p.hidden = p.id !== target; });
-    navButtons.forEach((b) => {
-      b.classList.toggle('is-active', b.dataset.panelTarget === target && b.dataset.action !== 'scan');
-    });
-    if (target === 'panel-collection') renderCollection();
-    if (isScanAction) startScanFlow();
+function navigateTo(target, isScanAction) {
+  panels.forEach((p) => { p.hidden = p.id !== target; });
+  navButtons.forEach((b) => {
+    b.classList.toggle('is-active', b.dataset.panelTarget === target && b.dataset.action !== 'scan');
   });
+  bottombar.hidden = false;
+  if (target === 'panel-collection') renderCollection();
+  if (target === 'panel-recherche' && !hasAutoLocated) {
+    hasAutoLocated = true;
+    locateAndFindShops();
+  }
+  if (isScanAction) startScanFlow();
+}
+
+document.querySelectorAll('.navbtn, .home-action').forEach((btn) => {
+  btn.addEventListener('click', () => navigateTo(btn.dataset.panelTarget, btn.dataset.action === 'scan'));
 });
+
+document.getElementById('brand-reload').addEventListener('click', () => location.reload());
 
 /* =========================================================
    Recherche externe (Discogs / Leboncoin / Fnac)
@@ -151,7 +373,7 @@ document.getElementById('btn-results-back').addEventListener('click', () => {
 function showResults(query) {
   rechercheHome.hidden = true;
   rechercheResults.hidden = false;
-  resultsTitle.textContent = `Résultats pour « ${query} »`;
+  resultsTitle.textContent = t('results_for', { query });
 
   const term = query.toLowerCase();
   const matches = DEMO_CATALOG.filter((v) =>
@@ -159,7 +381,7 @@ function showResults(query) {
   );
 
   resultEmpty.hidden = matches.length > 0;
-  resultEmpty.textContent = `Aucun résultat dans notre catalogue de démonstration pour « ${query} ». Ce catalogue n'illustre que quelques disques, en attendant une vraie source de données.`;
+  resultEmpty.textContent = t('results_empty', { query });
 
   resultList.innerHTML = matches.map((v, i) => `
     <li class="result-item" data-index="${i}">
@@ -208,10 +430,10 @@ const shopList = document.getElementById('shop-list');
 
 function locateAndFindShops() {
   if (!('geolocation' in navigator)) {
-    locateStatus.textContent = "La géolocalisation n'est pas disponible sur cet appareil.";
+    locateStatus.textContent = t('locate_unsupported');
     return;
   }
-  locateStatus.textContent = 'Localisation en cours…';
+  locateStatus.textContent = t('locate_loading');
   document.querySelectorAll('.city-chips .chip').forEach((c) => c.classList.remove('is-active'));
   navigator.geolocation.getCurrentPosition(
     (pos) => {
@@ -220,11 +442,11 @@ function locateAndFindShops() {
       initMapIfNeeded();
       map.setView([latitude, longitude], 14);
       markersLayer.clearLayers();
-      L.marker([latitude, longitude]).addTo(markersLayer).bindPopup('Vous êtes ici');
+      L.marker([latitude, longitude]).addTo(markersLayer).bindPopup('📍');
       findNearbyRecordShops(latitude, longitude);
     },
     (err) => {
-      locateStatus.textContent = "Localisation refusée ou indisponible. Autorisez l'accès à la position pour voir les disquaires proches.";
+      locateStatus.textContent = t('locate_denied');
       console.warn(err);
     },
     { enableHighAccuracy: true, timeout: 10000 }
@@ -255,7 +477,7 @@ document.querySelectorAll('.city-chips .chip').forEach((chip) => {
 });
 
 async function findNearbyRecordShops(lat, lon) {
-  locateStatus.textContent = 'Recherche des disquaires à proximité…';
+  locateStatus.textContent = t('shops_loading');
   shopList.innerHTML = '';
   state.shops = {};
   const radius = 5000;
@@ -271,14 +493,14 @@ async function findNearbyRecordShops(lat, lon) {
     const elements = (data.elements || []).filter((el) => el.lat && el.lon);
 
     if (!elements.length) {
-      locateStatus.textContent = 'Aucun disquaire référencé sur OpenStreetMap dans un rayon de 5 km.';
+      locateStatus.textContent = t('shops_none');
       return;
     }
-    locateStatus.textContent = `${elements.length} disquaire(s) trouvé(s) dans un rayon de 5 km.`;
+    locateStatus.textContent = t('shops_found', { n: elements.length });
 
     elements.forEach((el) => {
       const tags = el.tags || {};
-      const name = tags.name || 'Disquaire';
+      const name = tags.name || t('shop_unnamed');
       const addr = [tags['addr:housenumber'], tags['addr:street'], tags['addr:postcode'], tags['addr:city']]
         .filter(Boolean).join(' ');
       const distance = haversineKm(lat, lon, el.lat, el.lon).toFixed(1);
@@ -305,8 +527,8 @@ async function findNearbyRecordShops(lat, lon) {
       const dirUrl = `https://www.openstreetmap.org/directions?from=${lat}%2C${lon}&to=${el.lat}%2C${el.lon}`;
       li.innerHTML = `
         <span class="shop-name">${escapeHtml(name)}</span>
-        <span class="shop-meta">${escapeHtml(addr || 'Adresse non renseignée')} · ${distance} km</span><br>
-        <a href="${dirUrl}" target="_blank" rel="noopener" data-no-modal>Itinéraire →</a>
+        <span class="shop-meta">${escapeHtml(addr || t('shop_no_address'))} · ${distance} km</span><br>
+        <a href="${dirUrl}" target="_blank" rel="noopener" data-no-modal>${t('directions')}</a>
       `;
       li.addEventListener('click', (e) => {
         if (e.target.closest('[data-no-modal]')) return;
@@ -316,7 +538,7 @@ async function findNearbyRecordShops(lat, lon) {
     });
   } catch (err) {
     console.warn(err);
-    locateStatus.textContent = "Impossible de contacter le service de cartographie pour le moment.";
+    locateStatus.textContent = t('shops_error');
   }
 }
 
@@ -383,13 +605,13 @@ function openShopModal(shopId) {
   shopModalTitle.textContent = shop.name;
 
   const metaRows = [];
-  metaRows.push(`<li>${locationIconSvg()}<span>${escapeHtml(shop.address || 'Adresse non renseignée')} · ${shop.distance} km</span></li>`);
+  metaRows.push(`<li>${locationIconSvg()}<span>${escapeHtml(shop.address || t('shop_no_address'))} · ${shop.distance} km</span></li>`);
   metaRows.push(shop.phone
     ? `<li>${phoneIconSvg()}<a href="tel:${escapeHtml(shop.phone)}">${escapeHtml(shop.phone)}</a></li>`
-    : `<li>${phoneIconSvg()}<span>Téléphone non renseigné</span></li>`);
+    : `<li>${phoneIconSvg()}<span>${t('shop_phone_unknown')}</span></li>`);
   metaRows.push(shop.website
     ? `<li>${webIconSvg()}<a href="${escapeHtml(shop.website)}" target="_blank" rel="noopener">${escapeHtml(shop.website.replace(/^https?:\/\//, ''))}</a></li>`
-    : `<li>${webIconSvg()}<span>Site web non renseigné</span></li>`);
+    : `<li>${webIconSvg()}<span>${t('shop_website_unknown')}</span></li>`);
   shopModalMeta.innerHTML = metaRows.join('');
 
   shopInventoryFilter.value = '';
@@ -458,7 +680,7 @@ function openVinylModal(vinyl) {
   vinylShopList.innerHTML = demoShops.map((s) => `
     <li>
       <span class="shop-name">${escapeHtml(s.name)}</span>
-      <span class="shop-meta">${s.km} km · disponibilité fictive (démo)</span>
+      <span class="shop-meta">${t('vinyl_availability_demo', { km: s.km })}</span>
     </li>
   `).join('');
 
@@ -466,7 +688,7 @@ function openVinylModal(vinyl) {
   vinylLinks.innerHTML = ['leboncoin', 'discogs', 'fnac'].map((source) => `
     <a href="${EXTERNAL_SEARCH_URLS[source](query)}" target="_blank" rel="noopener">
       <img src="${SOURCE_FAVICONS[source]}" alt="" class="source-favicon" onerror="this.remove()">
-      Voir sur ${SOURCE_LABELS[source]}
+      ${t('link_view_on', { source: SOURCE_LABELS[source] })}
     </a>
   `).join('');
 
@@ -478,7 +700,7 @@ function openVinylModal(vinyl) {
     vinylMap.setView([center.lat, center.lon], 13);
     vinylMarkersLayer.clearLayers();
     demoShops.forEach((s) => {
-      L.marker([s.lat, s.lon]).addTo(vinylMarkersLayer).bindPopup(`<strong>${escapeHtml(s.name)}</strong> (démo)`);
+      L.marker([s.lat, s.lon]).addTo(vinylMarkersLayer).bindPopup(`<strong>${escapeHtml(s.name)}</strong> (demo)`);
     });
   });
 }
@@ -525,7 +747,7 @@ function stopCamera() {
 async function startModalCamera() {
   modalCameraStatus.textContent = '';
   if (!navigator.mediaDevices?.getUserMedia) {
-    modalCameraStatus.textContent = "La caméra n'est pas disponible — renseignez les informations manuellement.";
+    modalCameraStatus.textContent = t('camera_unavailable');
     return;
   }
   try {
@@ -538,7 +760,7 @@ async function startModalCamera() {
     modalCameraVideo.hidden = false;
     btnModalCapture.hidden = false;
   } catch (err) {
-    modalCameraStatus.textContent = "Accès à la caméra refusé — renseignez les informations manuellement.";
+    modalCameraStatus.textContent = t('camera_denied');
     console.warn(err);
   }
 }
@@ -579,25 +801,25 @@ async function analyzeCapturedCover(dataUrl) {
   if (!apiKey) {
     setTimeout(() => {
       modalSpinner.hidden = true;
-      applySuggestion(pickDemoSuggestion(), 'Suggestion automatique — démo, à vérifier (aucune clé Vision configurée)');
+      applySuggestion(pickDemoSuggestion(), t('demo_badge_no_key'));
     }, 900);
     return;
   }
 
-  modalCameraStatus.textContent = "Analyse de la pochette via Google Vision…";
+  modalCameraStatus.textContent = t('vision_analyzing');
   try {
     const suggestion = await recognizeCoverWithVision(dataUrl, apiKey);
     modalSpinner.hidden = true;
     if (suggestion) {
       modalCameraStatus.textContent = '';
-      applySuggestion(suggestion, "Suggestion automatique (analyse d'image Google Vision) — à vérifier");
+      applySuggestion(suggestion, t('vision_badge'));
     } else {
-      modalCameraStatus.textContent = 'Aucune correspondance trouvée pour cette pochette — renseignez les informations manuellement.';
+      modalCameraStatus.textContent = t('vision_no_match');
     }
   } catch (err) {
     console.warn(err);
     modalSpinner.hidden = true;
-    modalCameraStatus.textContent = "Erreur lors de l'analyse (clé invalide, quota dépassé ou réseau) — renseignez les informations manuellement.";
+    modalCameraStatus.textContent = t('vision_error');
   }
 }
 
@@ -668,12 +890,16 @@ function startScanFlow() {
    Réglages — clé API Google Cloud Vision
    ========================================================= */
 const VISION_KEY_STORAGE = 'diamant.visionApiKey';
+/* Clé partagée, restreinte à l'API Cloud Vision et au domaine de l'app
+   (voir Réglages). Un visiteur peut la remplacer par la sienne. Un
+   plafond de budget est en place côté Google Cloud en garde-fou. */
+const DEFAULT_VISION_API_KEY = 'AIzaSyCBNDUiV99Za3QAPt6NcpJEYNfi6QqcYYw';
 
 function getVisionApiKey() {
   try {
-    return localStorage.getItem(VISION_KEY_STORAGE) || '';
+    return localStorage.getItem(VISION_KEY_STORAGE) || DEFAULT_VISION_API_KEY;
   } catch (e) {
-    return '';
+    return DEFAULT_VISION_API_KEY;
   }
 }
 
@@ -689,9 +915,12 @@ function setVisionApiKey(key) {
 const settingsModalBackdrop = document.getElementById('settings-modal-backdrop');
 const settingsForm = document.getElementById('settings-form');
 const settingsStatus = document.getElementById('settings-status');
+const settingsLanguage = document.getElementById('settings-language');
 
 document.getElementById('btn-settings').addEventListener('click', () => {
-  settingsForm.visionApiKey.value = getVisionApiKey();
+  const personalKey = (function () { try { return localStorage.getItem(VISION_KEY_STORAGE) || ''; } catch (e) { return ''; } })();
+  settingsForm.visionApiKey.value = personalKey;
+  settingsLanguage.value = currentLang;
   settingsStatus.textContent = '';
   settingsModalBackdrop.hidden = false;
 });
@@ -703,19 +932,19 @@ settingsModalBackdrop.addEventListener('click', (e) => {
   if (e.target === settingsModalBackdrop) settingsModalBackdrop.hidden = true;
 });
 
+settingsLanguage.addEventListener('change', () => setLanguage(settingsLanguage.value));
+
 settingsForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const key = settingsForm.visionApiKey.value.trim();
   setVisionApiKey(key);
-  settingsStatus.textContent = key
-    ? 'Clé enregistrée sur cet appareil.'
-    : 'Aucune clé enregistrée — le scan reste en mode démonstration.';
+  settingsStatus.textContent = key ? t('settings_saved') : t('settings_cleared');
 });
 
 document.getElementById('btn-clear-key').addEventListener('click', () => {
   setVisionApiKey('');
   settingsForm.visionApiKey.value = '';
-  settingsStatus.textContent = 'Clé supprimée — le scan repasse en mode démonstration.';
+  settingsStatus.textContent = t('settings_cleared');
 });
 
 function vinylPlaceholderSvg() {
@@ -728,7 +957,7 @@ function buildDotPicker(selected) {
   noneBtn.type = 'button';
   noneBtn.className = 'dot' + (!selected ? ' is-selected' : '');
   noneBtn.dataset.color = 'none';
-  noneBtn.title = 'Aucune';
+  noneBtn.title = t('dot_none');
   noneBtn.addEventListener('click', () => selectDot(''));
   dotPicker.appendChild(noneBtn);
 
@@ -738,7 +967,7 @@ function buildDotPicker(selected) {
     b.className = 'dot' + (selected === c.key ? ' is-selected' : '');
     b.style.background = `var(${c.var})`;
     b.dataset.color = c.key;
-    b.title = c.label;
+    b.title = t(c.labelKey);
     b.addEventListener('click', () => selectDot(c.key));
     dotPicker.appendChild(b);
   });
@@ -817,7 +1046,7 @@ function stopPreview() {
 async function playAlbumPreview(record) {
   stopPreview();
   if (!record.artist || !record.title) return;
-  previewStatus.textContent = "Recherche d'un extrait…";
+  previewStatus.textContent = t('preview_searching');
   try {
     const term = encodeURIComponent(`${record.artist} ${record.title}`);
     const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`);
@@ -825,17 +1054,17 @@ async function playAlbumPreview(record) {
     const data = await res.json();
     const track = data.results && data.results[0];
     if (!track || !track.previewUrl) {
-      previewStatus.textContent = 'Aucun extrait audio trouvé pour cet album.';
+      previewStatus.textContent = t('preview_none');
       return;
     }
     previewAudio = new Audio(track.previewUrl);
     previewAudio.addEventListener('ended', stopPreview);
     await previewAudio.play();
-    previewStatus.textContent = `Extrait en écoute : ${track.trackName} (30 s, via iTunes)`;
+    previewStatus.textContent = t('preview_playing', { track: track.trackName });
     previewStopTimer = setTimeout(stopPreview, 60000);
   } catch (err) {
     console.warn(err);
-    previewStatus.textContent = "Extrait audio indisponible pour le moment.";
+    previewStatus.textContent = t('preview_unavailable');
     previewAudio = null;
   }
 }
@@ -895,7 +1124,7 @@ function updateGenreSuggestions() {
   datalist.innerHTML = genres.map((g) => `<option value="${escapeHtml(g)}">`).join('');
 
   const current = filterGenre.value;
-  filterGenre.innerHTML = '<option value="">Tous les styles</option>' +
+  filterGenre.innerHTML = `<option value="">${t('filter_all_styles')}</option>` +
     genres.map((g) => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
   filterGenre.value = genres.includes(current) ? current : '';
 }
@@ -906,7 +1135,7 @@ function buildDotFilters() {
   allBtn.type = 'button';
   allBtn.className = 'dot' + (state.filters.color === '' ? ' is-selected' : '');
   allBtn.dataset.color = 'none';
-  allBtn.title = 'Toutes';
+  allBtn.title = t('dot_all');
   allBtn.addEventListener('click', () => { state.filters.color = ''; buildDotFilters(); renderCollection(); });
   dotFilters.appendChild(allBtn);
 
@@ -915,7 +1144,7 @@ function buildDotFilters() {
     b.type = 'button';
     b.className = 'dot' + (state.filters.color === c.key ? ' is-selected' : '');
     b.style.background = `var(${c.var})`;
-    b.title = c.label;
+    b.title = t(c.labelKey);
     b.addEventListener('click', () => {
       state.filters.color = state.filters.color === c.key ? '' : c.key;
       buildDotFilters();
@@ -966,13 +1195,68 @@ function renderCollection() {
         ${dotColorVar ? `<span class="record-dot" style="background:var(${dotColorVar})"></span>` : ''}
       </div>
       <div class="record-info">
-        <p class="record-artist">${escapeHtml(record.artist || 'Artiste inconnu')}</p>
-        <p class="record-title">${escapeHtml(record.title || 'Sans titre')}</p>
+        <p class="record-artist">${escapeHtml(record.artist || t('unknown_artist'))}</p>
+        <p class="record-title">${escapeHtml(record.title || t('untitled'))}</p>
         <p class="record-meta">${record.year || '—'}${record.genre ? ' · ' + escapeHtml(record.genre) : ''}</p>
       </div>
     `;
     card.addEventListener('click', () => openRecordModal(record, { isNew: false }));
     recordGrid.appendChild(card);
+  });
+}
+
+/* =========================================================
+   Home — grille des grands albums de rock
+   ========================================================= */
+const HOME_ALBUMS = [
+  { artist: 'The Beatles', title: 'Abbey Road' },
+  { artist: 'Pink Floyd', title: 'The Dark Side of the Moon' },
+  { artist: 'Led Zeppelin', title: 'Led Zeppelin IV' },
+  { artist: 'Fleetwood Mac', title: 'Rumours' },
+  { artist: 'Nirvana', title: 'Nevermind' },
+  { artist: 'Queen', title: 'A Night at the Opera' },
+  { artist: 'The Rolling Stones', title: 'Sticky Fingers' },
+  { artist: 'AC/DC', title: 'Back in Black' },
+  { artist: "Guns N' Roses", title: 'Appetite for Destruction' },
+  { artist: 'Radiohead', title: 'OK Computer' },
+];
+
+function normalizeForMatch(s) {
+  return (s || '').toLowerCase().replace(/['’]/g, "'").replace(/^the\s+/, '').trim();
+}
+
+async function loadHomeGrid() {
+  const grid = document.getElementById('home-grid');
+  grid.innerHTML = HOME_ALBUMS.map(() => `<div class="home-cover">${vinylPlaceholderSvg()}</div>`).join('');
+  const cells = grid.children;
+
+  HOME_ALBUMS.forEach(async (album, i) => {
+    try {
+      /* On cherche d'abord l'artiste, puis on lit sa discographie complète :
+         beaucoup plus fiable qu'une recherche combinée artiste+titre, qui
+         remonte souvent des reprises ou singles sans rapport. */
+      const artistRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(album.artist)}&entity=musicArtist&attribute=artistTerm&limit=1`);
+      const artistData = await artistRes.json();
+      const artistId = artistData.results && artistData.results[0] && artistData.results[0].artistId;
+      if (!artistId) return;
+
+      const albumsRes = await fetch(`https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=200`);
+      const albumsData = await albumsRes.json();
+      const albums = (albumsData.results || []).filter((r) => r.wrapperType === 'collection');
+
+      const titleNorm = normalizeForMatch(album.title);
+      const match =
+        albums.find((r) => normalizeForMatch(r.collectionName) === titleNorm) ||
+        albums.find((r) => normalizeForMatch(r.collectionName).startsWith(titleNorm)) ||
+        albums[0];
+
+      const artwork = match && match.artworkUrl100;
+      if (!artwork) return;
+      const hiRes = artwork.replace('100x100bb', '600x600bb');
+      cells[i].innerHTML = `<img src="${hiRes}" alt="${escapeHtml(album.artist)} – ${escapeHtml(album.title)}" loading="lazy">`;
+    } catch (err) {
+      console.warn(err);
+    }
   });
 }
 
@@ -991,5 +1275,5 @@ function escapeHtml(str) {
    Init
    ========================================================= */
 seedDemoCollectionIfNeeded();
-renderCollection();
-locateAndFindShops();
+applyI18n();
+loadHomeGrid();

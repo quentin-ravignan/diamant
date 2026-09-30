@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en" id="html-root">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fdfbf5">
-<title>Diamant — votre discothèque</title>
+<title>Diamant — your record shop</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2248%22 fill=%22%230b0a08%22/><circle cx=%2250%22 cy=%2250%22 r=%2216%22 fill=%22%23f2ead9%22/><circle cx=%2250%22 cy=%2250%22 r=%225%22 fill=%22%230b0a08%22/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
 
   <!-- ===== Header ===== -->
   <header class="topbar">
-    <div class="brand">
+    <button class="brand" id="brand-reload" type="button" aria-label="Reload">
       <svg class="brand-disc" viewBox="0 0 100 100" aria-hidden="true">
         <circle cx="50" cy="50" r="48" fill="#0b0a08"/>
         <circle cx="50" cy="50" r="47" fill="none" stroke="#1a1611" stroke-width="0.6"/>
@@ -29,28 +29,48 @@
       </svg>
       <div class="brand-text">
         <h1>Diamant</h1>
-        <p>Local &amp; Online Discothèque</p>
+        <p data-i18n="tagline">Local &amp; Online Record Shop</p>
       </div>
-    </div>
-    <button class="btn-settings" id="btn-settings" type="button" aria-label="Réglages">
+    </button>
+    <button class="btn-settings" id="btn-settings" type="button" data-i18n-aria="settings_aria" aria-label="Settings">
       <svg viewBox="0 0 24 24" class="icon"><path d="M19.4 13a7.4 7.4 0 0 0 .06-1 7.4 7.4 0 0 0-.06-1l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.4.96a7.5 7.5 0 0 0-1.7-1L14.5 2.6a.5.5 0 0 0-.5-.4h-3.84a.5.5 0 0 0-.5.4l-.36 2.6a7.5 7.5 0 0 0-1.7 1l-2.4-.96a.5.5 0 0 0-.6.22L2.68 8.78a.5.5 0 0 0 .12.64L4.83 11a7.4 7.4 0 0 0 0 2l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.6.22l2.4-.96c.52.42 1.09.76 1.7 1l.36 2.6c.05.24.26.4.5.4h3.84c.24 0 .45-.16.5-.4l.36-2.6c.61-.24 1.18-.58 1.7-1l2.4.96c.2.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64L19.4 13zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>
     </button>
   </header>
 
+  <!-- ===== HOME ===== -->
+  <section class="panel" id="panel-home" data-panel>
+    <div class="home-grid" id="home-grid"></div>
+    <p class="home-cta" data-i18n="home_cta">Start to dig :</p>
+    <div class="home-actions">
+      <button class="home-action" data-panel-target="panel-recherche" type="button">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4z"/></svg>
+        <span data-i18n="nav_search">Search</span>
+      </button>
+      <button class="home-action" data-panel-target="panel-collection" data-action="scan" type="button">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M4 7a2 2 0 0 1 2-2h1.2l.9-1.2A2 2 0 0 1 9.7 3h4.6a2 2 0 0 1 1.6.8L16.8 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><circle cx="12" cy="13" r="3.2" fill="#f2ead9"/></svg>
+        <span data-i18n="nav_scan">Scan</span>
+      </button>
+      <button class="home-action" data-panel-target="panel-collection" type="button">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M3 4h18v3H3V4zm1 5h16l-1.5 11h-13L4 9zm5 2v6h1.6v-6H9zm4.4 0v6H15v-6h-1.6z"/></svg>
+        <span>Discothèque</span>
+      </button>
+    </div>
+  </section>
+
   <!-- ===== RECHERCHE ===== -->
-  <section class="panel" id="panel-recherche" data-panel>
+  <section class="panel" id="panel-recherche" data-panel hidden>
 
     <!-- Accueil recherche -->
     <div id="recherche-home">
       <form class="top-search" id="top-search-form">
-        <input type="search" id="top-search-input" placeholder="Chercher une artiste, un album, un disquaire…">
+        <input type="search" id="top-search-input" data-i18n-placeholder="search_placeholder" placeholder="Search for an artist, an album, a record shop…">
         <button type="submit" class="btn btn-primary">
           <svg viewBox="0 0 24 24" class="icon"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4z"/></svg>
-          Rechercher
+          <span data-i18n="btn_search">Search</span>
         </button>
       </form>
 
-      <p class="section-label">Parcourir une ville :</p>
+      <p class="section-label" data-i18n="browse_city_label">Browse a city:</p>
       <div class="source-chips city-chips">
         <button type="button" class="chip" data-city="paris">Paris</button>
         <button type="button" class="chip" data-city="nantes">Nantes</button>
@@ -63,17 +83,17 @@
 
       <button class="btn btn-ghost btn-relocate" id="btn-locate" type="button">
         <svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
-        Actualiser ma position
+        <span data-i18n="btn_relocate">Refresh my location</span>
       </button>
     </div>
 
     <!-- Résultats de recherche -->
     <div id="recherche-results" hidden>
       <div class="results-header">
-        <button class="modal-close" id="btn-results-back" type="button" aria-label="Retour">←</button>
+        <button class="modal-close" id="btn-results-back" type="button" data-i18n-aria="back_aria" aria-label="Back">←</button>
         <h2 id="results-title"></h2>
       </div>
-      <p class="demo-badge">Résultats de démonstration — à connecter à une vraie source de données</p>
+      <p class="demo-badge" data-i18n="results_demo_badge">Demo results — to be connected to a real data source</p>
       <ul class="result-list" id="result-list"></ul>
       <p class="empty-state" id="result-empty" hidden></p>
     </div>
@@ -84,13 +104,13 @@
     <div class="collection-toolbar">
       <button class="btn btn-primary btn-add" id="btn-add-manual" type="button">
         <svg viewBox="0 0 24 24" class="icon"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
-        Ajouter un disque
+        <span data-i18n="btn_add_record">Add a record</span>
       </button>
     </div>
 
     <div class="filters">
       <div class="filter-group">
-        <label for="filter-year-min">Année</label>
+        <label for="filter-year-min" data-i18n="filter_year">Year</label>
         <div class="year-range">
           <input type="number" id="filter-year-min" placeholder="Min" inputmode="numeric">
           <span>—</span>
@@ -98,30 +118,30 @@
         </div>
       </div>
       <div class="filter-group">
-        <label for="filter-genre">Style</label>
+        <label for="filter-genre" data-i18n="filter_style">Style</label>
         <select id="filter-genre">
-          <option value="">Tous les styles</option>
+          <option value="" data-i18n="filter_all_styles">All styles</option>
         </select>
       </div>
       <div class="filter-group">
-        <label>Gommette</label>
+        <label data-i18n="filter_sticker">Sticker</label>
         <div class="dot-filters" id="dot-filters"></div>
       </div>
     </div>
 
-    <p class="empty-state" id="collection-empty" hidden>Votre bac à disques est vide pour l'instant. Scannez ou ajoutez un vinyle pour commencer.</p>
+    <p class="empty-state" id="collection-empty" hidden data-i18n="collection_empty">Your crate is empty for now. Scan or add a record to get started.</p>
     <div class="record-grid" id="record-grid"></div>
   </section>
 
   <!-- ===== Bottom nav ===== -->
-  <nav class="bottombar" aria-label="Navigation principale">
-    <button class="navbtn is-active" data-panel-target="panel-recherche" type="button">
+  <nav class="bottombar" aria-label="Main navigation" hidden>
+    <button class="navbtn" data-panel-target="panel-recherche" type="button">
       <svg viewBox="0 0 24 24" class="icon"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4z"/></svg>
-      <span>Recherche</span>
+      <span data-i18n="nav_search">Search</span>
     </button>
     <button class="navbtn" data-panel-target="panel-collection" data-action="scan" type="button">
       <svg viewBox="0 0 24 24" class="icon"><path d="M4 7a2 2 0 0 1 2-2h1.2l.9-1.2A2 2 0 0 1 9.7 3h4.6a2 2 0 0 1 1.6.8L16.8 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><circle cx="12" cy="13" r="3.2" fill="#f2ead9"/></svg>
-      <span>Scanner</span>
+      <span data-i18n="nav_scan">Scan</span>
     </button>
     <button class="navbtn" data-panel-target="panel-collection" type="button">
       <svg viewBox="0 0 24 24" class="icon"><path d="M3 4h18v3H3V4zm1 5h16l-1.5 11h-13L4 9zm5 2v6h1.6v-6H9zm4.4 0v6H15v-6h-1.6z"/></svg>
@@ -133,39 +153,39 @@
 <!-- ===== Record detail / edit modal ===== -->
 <div class="modal-backdrop" id="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <button class="modal-close" id="modal-close" type="button" aria-label="Fermer">✕</button>
+    <button class="modal-close" id="modal-close" type="button" data-i18n-aria="close_aria" aria-label="Close">✕</button>
     <div class="modal-cover" id="modal-cover">
       <div id="modal-cover-static"></div>
       <video id="modal-camera-video" playsinline autoplay muted hidden></video>
-      <button class="btn-capture modal-capture-btn" id="btn-modal-capture" type="button" aria-label="Capturer" hidden><span></span></button>
+      <button class="btn-capture modal-capture-btn" id="btn-modal-capture" type="button" data-i18n-aria="capture_aria" aria-label="Capture" hidden><span></span></button>
       <div class="spinner modal-spinner" id="modal-spinner" aria-hidden="true" hidden></div>
     </div>
     <p class="status" id="modal-camera-status"></p>
     <p class="status" id="preview-status"></p>
-    <p class="demo-badge" id="demo-badge" hidden>Suggestion automatique — démo, à vérifier</p>
+    <p class="demo-badge" id="demo-badge" hidden></p>
     <canvas id="capture-canvas" hidden></canvas>
     <form id="record-form" class="field-form">
-      <label>Artiste
-        <input type="text" name="artist" required placeholder="Ex : Nina Simone">
+      <label><span data-i18n="field_artist">Artist</span>
+        <input type="text" name="artist" required data-i18n-placeholder="placeholder_artist" placeholder="E.g.: Nina Simone">
       </label>
-      <label>Album
-        <input type="text" name="title" required placeholder="Ex : Wild Is the Wind">
+      <label><span data-i18n="field_album">Album</span>
+        <input type="text" name="title" required data-i18n-placeholder="placeholder_album" placeholder="E.g.: Wild Is the Wind">
       </label>
       <div class="form-row">
-        <label>Année
+        <label><span data-i18n="field_year">Year</span>
           <input type="number" name="year" placeholder="1966" min="1900" max="2099">
         </label>
-        <label>Style
+        <label><span data-i18n="field_genre">Style</span>
           <input type="text" name="genre" placeholder="Jazz, Soul…" list="genre-suggestions">
         </label>
       </div>
       <datalist id="genre-suggestions"></datalist>
-      <label class="field-label-block">Gommette
+      <label class="field-label-block"><span data-i18n="field_sticker">Sticker</span>
         <div class="dot-picker" id="dot-picker"></div>
       </label>
       <div class="modal-actions">
-        <button type="button" class="btn btn-danger" id="btn-delete-record" hidden>Supprimer</button>
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <button type="button" class="btn btn-danger" id="btn-delete-record" hidden data-i18n="btn_delete">Delete</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
       </div>
     </form>
   </div>
@@ -174,16 +194,16 @@
 <!-- ===== Fiche discaire ===== -->
 <div class="modal-backdrop" id="shop-modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
-    <button class="modal-close" id="shop-modal-close" type="button" aria-label="Fermer">✕</button>
+    <button class="modal-close" id="shop-modal-close" type="button" data-i18n-aria="close_aria" aria-label="Close">✕</button>
     <h2 class="shop-modal-title" id="shop-modal-title"></h2>
     <ul class="shop-modal-meta" id="shop-modal-meta"></ul>
 
     <div class="shop-inventory">
-      <input type="search" id="shop-inventory-filter" placeholder="Filtrer sa discothèque…">
+      <input type="search" id="shop-inventory-filter" data-i18n-placeholder="shop_filter_placeholder" placeholder="Filter their record collection…">
       <ul class="shop-inventory-list" id="shop-inventory-list"></ul>
       <div class="shop-inventory-fallback" id="shop-inventory-fallback">
-        <p class="empty-state" id="shop-inventory-empty">Ce disquaire n'a pas encore partagé son catalogue en ligne ici.</p>
-        <p class="hint">En attendant, cherchez ses références sur :</p>
+        <p class="empty-state" id="shop-inventory-empty" data-i18n="shop_inventory_empty">This record shop hasn't shared their catalog online here yet.</p>
+        <p class="hint" data-i18n="shop_inventory_hint">In the meantime, search their references on:</p>
         <div class="source-chips" data-chips="shop"></div>
       </div>
     </div>
@@ -193,13 +213,13 @@
 <!-- ===== Fiche vinyle (résultat de recherche) ===== -->
 <div class="modal-backdrop" id="vinyl-modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="vinyl-modal-title">
-    <button class="modal-close" id="vinyl-modal-close" type="button" aria-label="Fermer">✕</button>
+    <button class="modal-close" id="vinyl-modal-close" type="button" data-i18n-aria="close_aria" aria-label="Close">✕</button>
     <h2 class="shop-modal-title" id="vinyl-modal-title"></h2>
-    <p class="demo-badge">Carte et disquaires de démonstration — à connecter à une vraie source de données</p>
-    <p class="section-label">Vinyle disponible en local :</p>
+    <p class="demo-badge" data-i18n="vinyl_demo_badge">Demo map and record shops — to be connected to a real data source</p>
+    <p class="section-label" data-i18n="vinyl_local_label">Vinyl available locally:</p>
     <div id="vinyl-map"></div>
     <ul class="shop-list" id="vinyl-shop-list"></ul>
-    <p class="section-label">Vinyle disponible en ligne :</p>
+    <p class="section-label" data-i18n="vinyl_online_label">Vinyl available online:</p>
     <div class="vinyl-links" id="vinyl-links"></div>
   </div>
 </div>
@@ -207,27 +227,29 @@
 <!-- ===== Réglages ===== -->
 <div class="modal-backdrop" id="settings-modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
-    <button class="modal-close" id="settings-modal-close" type="button" aria-label="Fermer">✕</button>
-    <h2 class="shop-modal-title" id="settings-modal-title">Réglages</h2>
+    <button class="modal-close" id="settings-modal-close" type="button" data-i18n-aria="close_aria" aria-label="Close">✕</button>
+    <h2 class="shop-modal-title" id="settings-modal-title" data-i18n="settings_title">Settings</h2>
 
-    <p class="hint">
-      Pour une vraie reconnaissance de pochette au scan, branche une clé
-      <strong>Google Cloud Vision API</strong> (payante au-delà d'un petit quota gratuit).
-      Sans clé, le scan reste en mode démonstration.
-    </p>
+    <label class="field-label-block" data-i18n="settings_language_label">Language</label>
+    <select id="settings-language" class="lang-select">
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+    </select>
+
+    <p class="hint" id="settings-hint"></p>
 
     <form id="settings-form" class="field-form">
-      <label>Clé API Google Cloud Vision
-        <input type="password" name="visionApiKey" placeholder="Colle ta clé ici" autocomplete="off">
+      <label><span data-i18n="settings_key_label">Google Cloud Vision API key</span>
+        <input type="password" name="visionApiKey" data-i18n-placeholder="settings_key_placeholder" placeholder="Paste your key here" autocomplete="off">
       </label>
-      <p class="hint">
-        Cette clé reste uniquement dans ce navigateur (stockage local) — elle n'est jamais envoyée ailleurs qu'à l'API Google, directement depuis ton appareil.
-        Pense à la restreindre dans la console Google Cloud (API Vision uniquement + domaine autorisé) et à fixer une alerte de budget.
+      <p class="hint" data-i18n="settings_privacy_hint">
+        This key stays only in this browser (local storage) — it's only ever sent to Google's API, directly from your device.
+        Remember to restrict it in Google Cloud console (Vision API only + allowed domain) and set a budget alert.
       </p>
       <p class="status" id="settings-status"></p>
       <div class="modal-actions">
-        <button type="button" class="btn btn-danger" id="btn-clear-key">Supprimer la clé</button>
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <button type="button" class="btn btn-danger" id="btn-clear-key" data-i18n="btn_clear_key">Remove key</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Save</button>
       </div>
     </form>
   </div>

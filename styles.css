@@ -56,8 +56,28 @@ html, body {
   z-index: 20;
 }
 
-.brand { display: flex; align-items: center; gap: 12px; }
-.brand-disc { width: 40px; height: 40px; flex: none; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+.brand-disc {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  animation: spin-disc 9s linear infinite;
+}
+@keyframes spin-disc {
+  to { transform: rotate(360deg); }
+}
 .brand-text h1 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -92,6 +112,58 @@ html, body {
 
 /* ===== Panels ===== */
 .panel { padding: 18px 16px 24px; }
+
+/* ===== Home ===== */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.home-cover {
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--vinyl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+.home-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.home-cover svg { width: 40%; height: 40%; fill: var(--on-vinyl); }
+
+.home-cta {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+
+.home-actions {
+  display: flex;
+  gap: 10px;
+}
+.home-action {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--paper-dark);
+  color: var(--ink);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.home-action .icon { width: 22px; height: 22px; fill: var(--accent); }
+.home-action:active { transform: scale(0.98); }
 
 /* ===== Recherche : champ principal + carte ===== */
 .top-search {
@@ -513,6 +585,19 @@ select#filter-genre {
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field-label-block { margin-top: 4px; }
+
+.lang-select {
+  display: block;
+  width: 100%;
+  margin: 6px 0 16px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--paper-dark);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
 
 .modal-actions {
   display: flex;
