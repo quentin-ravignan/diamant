@@ -48,12 +48,16 @@ const state = {
 const panels = document.querySelectorAll('[data-panel]');
 const navButtons = document.querySelectorAll('.navbtn');
 
+const panelScanner = document.getElementById('panel-scanner');
+
 navButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.panelTarget;
+    if (!panelScanner.hidden && target !== 'panel-scanner') stopCamera();
     panels.forEach((p) => { p.hidden = p.id !== target; });
     navButtons.forEach((b) => b.classList.toggle('is-active', b === btn));
     if (target === 'panel-collection') renderCollection();
+    if (target === 'panel-scanner') openCamera();
   });
 });
 
@@ -64,6 +68,15 @@ const EXTERNAL_SEARCH_URLS = {
   discogs: (q) => `https://www.discogs.com/search/?q=${encodeURIComponent(q)}&type=release&format_exact=Vinyl`,
   leboncoin: (q) => `https://www.leboncoin.fr/recherche?category=15&text=${encodeURIComponent(q)}`,
   fnac: (q) => `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${encodeURIComponent(q + ' vinyle')}`,
+};
+
+const SOURCE_LABELS = { discogs: 'Discogs', leboncoin: 'Leboncoin', fnac: 'Fnac' };
+/* Icônes des sites récupérées via le service de favicons de Google plutôt
+   que d'héberger nous-mêmes les logos de marque de ces sociétés. */
+const SOURCE_FAVICONS = {
+  discogs: 'https://www.google.com/s2/favicons?sz=64&domain=discogs.com',
+  leboncoin: 'https://www.google.com/s2/favicons?sz=64&domain=leboncoin.fr',
+  fnac: 'https://www.google.com/s2/favicons?sz=64&domain=fnac.com',
 };
 
 function openExternalSearch(source, query) {
@@ -403,11 +416,12 @@ function openVinylModal(vinyl) {
   `).join('');
 
   const query = `${vinyl.artist} ${vinyl.title}`;
-  vinylLinks.innerHTML = `
-    <a href="${EXTERNAL_SEARCH_URLS.discogs(query)}" target="_blank" rel="noopener">Voir sur Discogs</a>
-    <a href="${EXTERNAL_SEARCH_URLS.leboncoin(query)}" target="_blank" rel="noopener">Voir sur Leboncoin</a>
-    <a href="${EXTERNAL_SEARCH_URLS.fnac(query)}" target="_blank" rel="noopener">Voir sur Fnac</a>
-  `;
+  vinylLinks.innerHTML = ['discogs', 'leboncoin', 'fnac'].map((source) => `
+    <a href="${EXTERNAL_SEARCH_URLS[source](query)}" target="_blank" rel="noopener">
+      <img src="${SOURCE_FAVICONS[source]}" alt="" class="source-favicon" onerror="this.remove()">
+      Voir sur ${SOURCE_LABELS[source]}
+    </a>
+  `).join('');
 
   vinylModalBackdrop.hidden = false;
 
@@ -439,7 +453,8 @@ const captureCanvas = document.getElementById('capture-canvas');
 
 let cameraStream = null;
 
-document.getElementById('btn-open-camera').addEventListener('click', async () => {
+async function openCamera() {
+  if (cameraStream) return;
   if (!navigator.mediaDevices?.getUserMedia) {
     cameraStatus.textContent = "La caméra n'est pas disponible dans ce navigateur.";
     return;
@@ -456,7 +471,9 @@ document.getElementById('btn-open-camera').addEventListener('click', async () =>
     cameraStatus.textContent = "Accès à la caméra refusé ou indisponible.";
     console.warn(err);
   }
-});
+}
+
+document.getElementById('btn-open-camera').addEventListener('click', openCamera);
 
 function stopCamera() {
   if (cameraStream) {
