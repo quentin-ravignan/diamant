@@ -42,22 +42,47 @@ const state = {
   lastPosition: null,
 };
 
+/* Pré-remplit la Discothèque avec quelques disques de démonstration au
+   tout premier lancement, pour ne pas arriver sur un écran vide. Ne se
+   déclenche qu'une fois (même si l'utilisateur vide ensuite sa vraie
+   collection). */
+const DEMO_SEED_FLAG = 'diamant.demoSeeded.v1';
+
+function seedDemoCollectionIfNeeded() {
+  if (localStorage.getItem(DEMO_SEED_FLAG)) return;
+  localStorage.setItem(DEMO_SEED_FLAG, '1');
+  if (state.collection.length > 0) return;
+
+  const colors = ['red', '', 'mustard', '', 'green', ''];
+  state.collection = DEMO_CATALOG.slice(0, 6).map((v, i) => ({
+    id: crypto.randomUUID ? crypto.randomUUID() : `demo-${i}`,
+    artist: v.artist,
+    title: v.title,
+    year: v.year,
+    genre: v.genre,
+    color: colors[i] || '',
+    cover: null,
+    addedAt: Date.now() - i * 1000,
+  }));
+  saveCollection();
+}
+
 /* =========================================================
    Navigation
    ========================================================= */
 const panels = document.querySelectorAll('[data-panel]');
 const navButtons = document.querySelectorAll('.navbtn');
 
-const panelScanner = document.getElementById('panel-scanner');
-
 navButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.panelTarget;
-    if (!panelScanner.hidden && target !== 'panel-scanner') stopCamera();
+    const isScanAction = btn.dataset.action === 'scan';
     panels.forEach((p) => { p.hidden = p.id !== target; });
-    navButtons.forEach((b) => b.classList.toggle('is-active', b === btn));
+    navButtons.forEach((b) => {
+      b.classList.toggle('is-active', b.dataset.panelTarget === target && b.dataset.action !== 'scan');
+    });
     if (target === 'panel-collection') renderCollection();
-    if (target === 'panel-scanner') openCamera();
+    if (isScanAction) startScanFlow();
   });
 });
 
@@ -441,79 +466,6 @@ vinylModalBackdrop.addEventListener('click', (e) => {
   if (e.target === vinylModalBackdrop) vinylModalBackdrop.hidden = true;
 });
 
-/* =========================================================
-   Scanner — caméra + capture + fiche à valider
-   ========================================================= */
-const scanIdle = document.getElementById('scan-idle');
-const cameraWrap = document.getElementById('camera-wrap');
-const cameraVideo = document.getElementById('camera-video');
-const cameraStatus = document.getElementById('camera-status');
-const analyzingCard = document.getElementById('analyzing-card');
-const captureCanvas = document.getElementById('capture-canvas');
-
-let cameraStream = null;
-
-async function openCamera() {
-  if (cameraStream) return;
-  if (!navigator.mediaDevices?.getUserMedia) {
-    cameraStatus.textContent = "La caméra n'est pas disponible dans ce navigateur.";
-    return;
-  }
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' },
-      audio: false,
-    });
-    cameraVideo.srcObject = cameraStream;
-    scanIdle.hidden = true;
-    cameraWrap.hidden = false;
-  } catch (err) {
-    cameraStatus.textContent = "Accès à la caméra refusé ou indisponible.";
-    console.warn(err);
-  }
-}
-
-document.getElementById('btn-open-camera').addEventListener('click', openCamera);
-
-function stopCamera() {
-  if (cameraStream) {
-    cameraStream.getTracks().forEach((t) => t.stop());
-    cameraStream = null;
-  }
-  cameraWrap.hidden = true;
-  scanIdle.hidden = false;
-}
-
-document.getElementById('btn-close-camera').addEventListener('click', stopCamera);
-
-document.getElementById('btn-capture').addEventListener('click', () => {
-  const w = cameraVideo.videoWidth;
-  const h = cameraVideo.videoHeight;
-  if (!w || !h) return;
-  captureCanvas.width = w;
-  captureCanvas.height = h;
-  captureCanvas.getContext('2d').drawImage(cameraVideo, 0, 0, w, h);
-  const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.85);
-
-  stopCamera();
-  cameraWrap.hidden = true;
-  analyzingCard.hidden = false;
-
-  setTimeout(() => {
-    analyzingCard.hidden = true;
-    scanIdle.hidden = false;
-    const suggestion = pickDemoSuggestion();
-    openRecordModal({
-      cover: dataUrl,
-      artist: suggestion?.artist || '',
-      title: suggestion?.title || '',
-      year: suggestion?.year || '',
-      genre: suggestion?.genre || '',
-      color: '',
-    }, { isNew: true, showDemoBadge: !!suggestion });
-  }, 900);
-});
-
 function pickDemoSuggestion() {
   return DEMO_CATALOG[Math.floor(Math.random() * DEMO_CATALOG.length)];
 }
@@ -523,14 +475,85 @@ document.getElementById('btn-add-manual').addEventListener('click', () => {
 });
 
 /* =========================================================
-   Modal fiche disque (ajout / édition)
+   Modal fiche disque (ajout / édition / scan)
    ========================================================= */
 const modalBackdrop = document.getElementById('modal-backdrop');
-const modalCover = document.getElementById('modal-cover');
+const modalCoverStatic = document.getElementById('modal-cover-static');
+const modalCameraVideo = document.getElementById('modal-camera-video');
+const btnModalCapture = document.getElementById('btn-modal-capture');
+const modalSpinner = document.getElementById('modal-spinner');
+const modalCameraStatus = document.getElementById('modal-camera-status');
+const captureCanvas = document.getElementById('capture-canvas');
 const demoBadge = document.getElementById('demo-badge');
 const recordForm = document.getElementById('record-form');
 const dotPicker = document.getElementById('dot-picker');
 const btnDelete = document.getElementById('btn-delete-record');
+
+let cameraStream = null;
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((t) => t.stop());
+    cameraStream = null;
+  }
+  modalCameraVideo.hidden = true;
+  btnModalCapture.hidden = true;
+}
+
+async function startModalCamera() {
+  modalCameraStatus.textContent = '';
+  if (!navigator.mediaDevices?.getUserMedia) {
+    modalCameraStatus.textContent = "La caméra n'est pas disponible — renseignez les informations manuellement.";
+    return;
+  }
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' },
+      audio: false,
+    });
+    modalCameraVideo.srcObject = cameraStream;
+    modalCoverStatic.hidden = true;
+    modalCameraVideo.hidden = false;
+    btnModalCapture.hidden = false;
+  } catch (err) {
+    modalCameraStatus.textContent = "Accès à la caméra refusé — renseignez les informations manuellement.";
+    console.warn(err);
+  }
+}
+
+function captureModalPhoto() {
+  const w = modalCameraVideo.videoWidth;
+  const h = modalCameraVideo.videoHeight;
+  if (!w || !h) return;
+  captureCanvas.width = w;
+  captureCanvas.height = h;
+  captureCanvas.getContext('2d').drawImage(modalCameraVideo, 0, 0, w, h);
+  const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.85);
+
+  stopCamera();
+  state.pendingCover = dataUrl;
+  modalCoverStatic.hidden = false;
+  modalCoverStatic.innerHTML = `<img src="${dataUrl}" alt="Pochette">`;
+  modalSpinner.hidden = false;
+
+  setTimeout(() => {
+    modalSpinner.hidden = true;
+    const suggestion = pickDemoSuggestion();
+    recordForm.artist.value = suggestion.artist;
+    recordForm.title.value = suggestion.title;
+    recordForm.year.value = suggestion.year;
+    recordForm.genre.value = suggestion.genre;
+    demoBadge.hidden = false;
+    updateGenreSuggestions();
+  }, 900);
+}
+
+btnModalCapture.addEventListener('click', captureModalPhoto);
+
+function startScanFlow() {
+  openRecordModal({ cover: null, artist: '', title: '', year: '', genre: '', color: '' }, { isNew: true });
+  startModalCamera();
+}
 
 function vinylPlaceholderSvg() {
   return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#e8dcc3" stroke-width="3"/><circle cx="50" cy="50" r="14" fill="#e8dcc3"/></svg>`;
@@ -569,7 +592,11 @@ function openRecordModal(record, { isNew, showDemoBadge } = {}) {
   state.editingId = isNew ? null : record.id;
   state.pendingCover = record.cover || null;
 
-  modalCover.innerHTML = record.cover
+  stopCamera();
+  modalCameraStatus.textContent = '';
+  modalSpinner.hidden = true;
+  modalCoverStatic.hidden = false;
+  modalCoverStatic.innerHTML = record.cover
     ? `<img src="${record.cover}" alt="Pochette">`
     : vinylPlaceholderSvg();
 
@@ -590,6 +617,7 @@ function openRecordModal(record, { isNew, showDemoBadge } = {}) {
 }
 
 function closeModal() {
+  stopCamera();
   modalBackdrop.hidden = true;
   state.editingId = null;
   state.pendingCover = null;
@@ -746,5 +774,6 @@ function escapeHtml(str) {
 /* =========================================================
    Init
    ========================================================= */
+seedDemoCollectionIfNeeded();
 renderCollection();
 locateAndFindShops();

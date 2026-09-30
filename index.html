@@ -69,34 +69,7 @@
     </div>
   </section>
 
-  <!-- ===== SCANNER ===== -->
-  <section class="panel" id="panel-scanner" data-panel hidden>
-    <div class="card scan-card" id="scan-idle">
-      <svg viewBox="0 0 24 24" class="icon-lg"><path d="M4 7a2 2 0 0 1 2-2h1.2l.9-1.2A2 2 0 0 1 9.7 3h4.6a2 2 0 0 1 1.6.8L16.8 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><circle cx="12" cy="13" r="3.6" fill="#f2ead9"/></svg>
-      <p class="hint">Scannez une pochette pour l'ajouter rapidement à votre collection.</p>
-      <button class="btn btn-primary" id="btn-open-camera" type="button">Ouvrir l'appareil photo</button>
-      <p class="status" id="camera-status"></p>
-    </div>
-
-    <div class="camera-wrap" id="camera-wrap" hidden>
-      <video id="camera-video" playsinline autoplay muted></video>
-      <div class="camera-actions">
-        <button class="btn btn-ghost" id="btn-close-camera" type="button">Annuler</button>
-        <button class="btn btn-capture" id="btn-capture" type="button" aria-label="Capturer">
-          <span></span>
-        </button>
-      </div>
-    </div>
-
-    <canvas id="capture-canvas" hidden></canvas>
-
-    <div class="card analyzing-card" id="analyzing-card" hidden>
-      <div class="spinner" aria-hidden="true"></div>
-      <p>Analyse de la pochette…</p>
-    </div>
-  </section>
-
-  <!-- ===== COLLECTION ===== -->
+  <!-- ===== COLLECTION (Discothèque) ===== -->
   <section class="panel" id="panel-collection" data-panel hidden>
     <div class="collection-toolbar">
       <button class="btn btn-primary btn-add" id="btn-add-manual" type="button">
@@ -136,13 +109,13 @@
       <svg viewBox="0 0 24 24" class="icon"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4z"/></svg>
       <span>Recherche</span>
     </button>
-    <button class="navbtn" data-panel-target="panel-scanner" type="button">
+    <button class="navbtn" data-panel-target="panel-collection" data-action="scan" type="button">
       <svg viewBox="0 0 24 24" class="icon"><path d="M4 7a2 2 0 0 1 2-2h1.2l.9-1.2A2 2 0 0 1 9.7 3h4.6a2 2 0 0 1 1.6.8L16.8 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/><circle cx="12" cy="13" r="3.2" fill="#f2ead9"/></svg>
       <span>Scanner</span>
     </button>
     <button class="navbtn" data-panel-target="panel-collection" type="button">
       <svg viewBox="0 0 24 24" class="icon"><path d="M3 4h18v3H3V4zm1 5h16l-1.5 11h-13L4 9zm5 2v6h1.6v-6H9zm4.4 0v6H15v-6h-1.6z"/></svg>
-      <span>Collection</span>
+      <span>Discothèque</span>
     </button>
   </nav>
 </div>
@@ -151,8 +124,15 @@
 <div class="modal-backdrop" id="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <button class="modal-close" id="modal-close" type="button" aria-label="Fermer">✕</button>
-    <div class="modal-cover" id="modal-cover"></div>
+    <div class="modal-cover" id="modal-cover">
+      <div id="modal-cover-static"></div>
+      <video id="modal-camera-video" playsinline autoplay muted hidden></video>
+      <button class="btn-capture modal-capture-btn" id="btn-modal-capture" type="button" aria-label="Capturer" hidden><span></span></button>
+      <div class="spinner modal-spinner" id="modal-spinner" aria-hidden="true" hidden></div>
+    </div>
+    <p class="status" id="modal-camera-status"></p>
     <p class="demo-badge" id="demo-badge" hidden>Suggestion automatique — démo, à vérifier</p>
+    <canvas id="capture-canvas" hidden></canvas>
     <form id="record-form">
       <label>Artiste
         <input type="text" name="artist" required placeholder="Ex : Nina Simone">
