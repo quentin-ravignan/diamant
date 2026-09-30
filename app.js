@@ -39,6 +39,7 @@ const state = {
   filters: { yearMin: '', yearMax: '', genre: '', color: '' },
   shops: {},
   activeShopId: null,
+  lastPosition: null,
 };
 
 /* =========================================================
@@ -72,13 +73,80 @@ function openExternalSearch(source, query) {
   if (urlBuilder) window.open(urlBuilder(q), '_blank', 'noopener');
 }
 
+/* Catalogue de démonstration — illustre le flux de recherche (prix,
+   distance, disponibilité par plateforme) sans prétendre représenter
+   un vrai stock ou de vrais prix. Sert aussi de base aux suggestions
+   du scanner. À remplacer par une vraie source de données (ex. API
+   Discogs) le jour où c'est possible. */
+const DEMO_CATALOG = [
+  { artist: 'Nina Simone', title: 'Wild Is the Wind', year: 1966, genre: 'Jazz', price: '22 €', nearestShopKm: 1.2, sources: { discogs: true, leboncoin: true, fnac: false }, swatch: 'var(--dot-red)' },
+  { artist: 'Fleetwood Mac', title: 'Rumours', year: 1977, genre: 'Rock', price: '15 €', nearestShopKm: 2.6, sources: { discogs: true, leboncoin: true, fnac: true }, swatch: 'var(--dot-mustard)' },
+  { artist: 'Miles Davis', title: 'Kind of Blue', year: 1959, genre: 'Jazz', price: '28 €', nearestShopKm: 0.8, sources: { discogs: true, leboncoin: false, fnac: true }, swatch: 'var(--dot-green)' },
+  { artist: 'Daft Punk', title: 'Discovery', year: 2001, genre: 'Electro', price: '19 €', nearestShopKm: 3.4, sources: { discogs: true, leboncoin: true, fnac: true }, swatch: 'var(--dot-blue)' },
+  { artist: 'Serge Gainsbourg', title: 'Melody Nelson', year: 1971, genre: 'Chanson', price: '35 €', nearestShopKm: 4.1, sources: { discogs: true, leboncoin: false, fnac: false }, swatch: 'var(--dot-plum)' },
+  { artist: 'Amy Winehouse', title: 'Back to Black', year: 2006, genre: 'Soul', price: '24 €', nearestShopKm: 1.9, sources: { discogs: true, leboncoin: true, fnac: true }, swatch: 'var(--dot-terracotta)' },
+  { artist: 'Radiohead', title: 'In Rainbows', year: 2007, genre: 'Rock', price: '27 €', nearestShopKm: 5.2, sources: { discogs: true, leboncoin: true, fnac: false }, swatch: 'var(--dot-red)' },
+  { artist: 'Herbie Hancock', title: 'Head Hunters', year: 1973, genre: 'Jazz-Funk', price: '30 €', nearestShopKm: 2.1, sources: { discogs: true, leboncoin: false, fnac: false }, swatch: 'var(--dot-mustard)' },
+  { artist: 'Air', title: 'Moon Safari', year: 1998, genre: 'Electro', price: '21 €', nearestShopKm: 0.5, sources: { discogs: true, leboncoin: true, fnac: true }, swatch: 'var(--dot-green)' },
+  { artist: 'Étienne Daho', title: 'Pop Satori', year: 1986, genre: 'Pop', price: '18 €', nearestShopKm: 3.0, sources: { discogs: true, leboncoin: true, fnac: false }, swatch: 'var(--dot-blue)' },
+];
+
 const topSearchForm = document.getElementById('top-search-form');
 const topSearchInput = document.getElementById('top-search-input');
+const rechercheHome = document.getElementById('recherche-home');
+const rechercheResults = document.getElementById('recherche-results');
+const resultsTitle = document.getElementById('results-title');
+const resultList = document.getElementById('result-list');
+const resultEmpty = document.getElementById('result-empty');
 
-topSearchForm.addEventListener('submit', (e) => e.preventDefault());
-topSearchForm.querySelectorAll('.chip').forEach((chip) => {
-  chip.addEventListener('click', () => openExternalSearch(chip.dataset.source, topSearchInput.value));
+topSearchForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const query = topSearchInput.value.trim();
+  if (query) showResults(query);
 });
+
+document.getElementById('btn-results-back').addEventListener('click', () => {
+  rechercheResults.hidden = true;
+  rechercheHome.hidden = false;
+});
+
+function showResults(query) {
+  rechercheHome.hidden = true;
+  rechercheResults.hidden = false;
+  resultsTitle.textContent = `Résultats pour « ${query} »`;
+
+  const term = query.toLowerCase();
+  const matches = DEMO_CATALOG.filter((v) =>
+    `${v.artist} ${v.title}`.toLowerCase().includes(term)
+  );
+
+  resultEmpty.hidden = matches.length > 0;
+  resultEmpty.textContent = `Aucun résultat dans notre catalogue de démonstration pour « ${query} ». Ce catalogue n'illustre que quelques disques, en attendant une vraie source de données.`;
+
+  resultList.innerHTML = matches.map((v, i) => `
+    <li class="result-item" data-index="${i}">
+      <div class="result-cover" style="background:${v.swatch}">${vinylPlaceholderSvg()}</div>
+      <div class="result-info">
+        <p class="result-artist">${escapeHtml(v.artist)}</p>
+        <p class="result-title">${escapeHtml(v.title)}</p>
+        <p class="result-year">${v.year}${v.genre ? ' · ' + escapeHtml(v.genre) : ''}</p>
+      </div>
+      <div class="result-side">
+        <span class="result-price">${escapeHtml(v.price)}</span>
+        <span class="result-distance">${v.nearestShopKm} km</span>
+        <span class="source-dots">
+          <span class="source-dot${v.sources.discogs ? ' is-available' : ''}" title="Discogs"></span>
+          <span class="source-dot${v.sources.leboncoin ? ' is-available' : ''}" title="Leboncoin"></span>
+          <span class="source-dot${v.sources.fnac ? ' is-available' : ''}" title="Fnac"></span>
+        </span>
+      </div>
+    </li>
+  `).join('');
+
+  resultList.querySelectorAll('.result-item').forEach((li) => {
+    li.addEventListener('click', () => openVinylModal(matches[Number(li.dataset.index)]));
+  });
+}
 
 /* =========================================================
    Carte — géolocalisation + disquaires (OpenStreetMap Overpass)
@@ -109,6 +177,7 @@ function locateAndFindShops() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const { latitude, longitude } = pos.coords;
+      state.lastPosition = { lat: latitude, lon: longitude };
       initMapIfNeeded();
       map.setView([latitude, longitude], 14);
       markersLayer.clearLayers();
@@ -292,6 +361,73 @@ shopInventoryFilter.addEventListener('input', () => {
 });
 
 /* =========================================================
+   Fiche vinyle (résultat de recherche)
+   ========================================================= */
+const vinylModalBackdrop = document.getElementById('vinyl-modal-backdrop');
+const vinylModalTitle = document.getElementById('vinyl-modal-title');
+const vinylShopList = document.getElementById('vinyl-shop-list');
+const vinylLinks = document.getElementById('vinyl-links');
+
+let vinylMap = null;
+let vinylMarkersLayer = null;
+
+function initVinylMapIfNeeded() {
+  if (vinylMap) return;
+  vinylMap = L.map('vinyl-map', { zoomControl: false, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(vinylMap);
+  vinylMarkersLayer = L.layerGroup().addTo(vinylMap);
+}
+
+/* Noms de disquaires fictifs, pour ne jamais laisser croire qu'un vrai
+   magasin a ce disque en stock tant qu'aucune source de données réelle
+   n'est branchée. */
+const DEMO_SHOP_NAMES = ['Le Sillon Perdu', 'Microsillon Café', 'Bac à Vinyles'];
+
+function openVinylModal(vinyl) {
+  vinylModalTitle.textContent = `${vinyl.artist} — ${vinyl.title} (${vinyl.year})`;
+
+  const center = state.lastPosition || { lat: 48.8566, lon: 2.3522 };
+  const offsets = [[0.01, 0.015], [-0.012, 0.008], [0.006, -0.014]];
+  const demoShops = offsets.map((off, i) => ({
+    name: DEMO_SHOP_NAMES[i],
+    lat: center.lat + off[0],
+    lon: center.lon + off[1],
+    km: (vinyl.nearestShopKm + i * 1.4).toFixed(1),
+  }));
+
+  vinylShopList.innerHTML = demoShops.map((s) => `
+    <li>
+      <span class="shop-name">${escapeHtml(s.name)}</span>
+      <span class="shop-meta">${s.km} km · disponibilité fictive (démo)</span>
+    </li>
+  `).join('');
+
+  const query = `${vinyl.artist} ${vinyl.title}`;
+  vinylLinks.innerHTML = `
+    <a href="${EXTERNAL_SEARCH_URLS.discogs(query)}" target="_blank" rel="noopener">Voir sur Discogs</a>
+    <a href="${EXTERNAL_SEARCH_URLS.leboncoin(query)}" target="_blank" rel="noopener">Voir sur Leboncoin</a>
+    <a href="${EXTERNAL_SEARCH_URLS.fnac(query)}" target="_blank" rel="noopener">Voir sur Fnac</a>
+  `;
+
+  vinylModalBackdrop.hidden = false;
+
+  requestAnimationFrame(() => {
+    initVinylMapIfNeeded();
+    vinylMap.invalidateSize();
+    vinylMap.setView([center.lat, center.lon], 13);
+    vinylMarkersLayer.clearLayers();
+    demoShops.forEach((s) => {
+      L.marker([s.lat, s.lon]).addTo(vinylMarkersLayer).bindPopup(`<strong>${escapeHtml(s.name)}</strong> (démo)`);
+    });
+  });
+}
+
+document.getElementById('vinyl-modal-close').addEventListener('click', () => { vinylModalBackdrop.hidden = true; });
+vinylModalBackdrop.addEventListener('click', (e) => {
+  if (e.target === vinylModalBackdrop) vinylModalBackdrop.hidden = true;
+});
+
+/* =========================================================
    Scanner — caméra + capture + fiche à valider
    ========================================================= */
 const scanIdle = document.getElementById('scan-idle');
@@ -361,20 +497,8 @@ document.getElementById('btn-capture').addEventListener('click', () => {
   }, 900);
 });
 
-/* Petit jeu de données "démo" — illustre le flux de reconnaissance
-   sans prétendre reconnaître réellement la pochette scannée.
-   À remplacer par un vrai service de vision (ex. API Discogs + image
-   recognition, Google Vision…) le jour où une clé API est disponible. */
-const DEMO_DATASET = [
-  { artist: 'Nina Simone', title: 'Wild Is the Wind', year: 1966, genre: 'Jazz' },
-  { artist: 'Fleetwood Mac', title: 'Rumours', year: 1977, genre: 'Rock' },
-  { artist: 'Miles Davis', title: 'Kind of Blue', year: 1959, genre: 'Jazz' },
-  { artist: 'Daft Punk', title: 'Discovery', year: 2001, genre: 'Electro' },
-  { artist: 'Serge Gainsbourg', title: 'Melody Nelson', year: 1971, genre: 'Chanson' },
-];
-
 function pickDemoSuggestion() {
-  return DEMO_DATASET[Math.floor(Math.random() * DEMO_DATASET.length)];
+  return DEMO_CATALOG[Math.floor(Math.random() * DEMO_CATALOG.length)];
 }
 
 document.getElementById('btn-add-manual').addEventListener('click', () => {

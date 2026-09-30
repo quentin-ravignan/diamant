@@ -36,23 +36,37 @@
 
   <!-- ===== RECHERCHE ===== -->
   <section class="panel" id="panel-recherche" data-panel>
-    <form class="top-search" id="top-search-form">
-      <input type="search" id="top-search-input" placeholder="Chercher un artiste, un album…">
-      <div class="source-chips" data-chips="top">
-        <button type="button" class="chip" data-source="discogs">Discogs</button>
-        <button type="button" class="chip" data-source="leboncoin">Leboncoin</button>
-        <button type="button" class="chip" data-source="fnac">Fnac</button>
+
+    <!-- Accueil recherche -->
+    <div id="recherche-home">
+      <form class="top-search" id="top-search-form">
+        <input type="search" id="top-search-input" placeholder="Chercher un artiste, un album…">
+        <button type="submit" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12A6 6 0 0 1 10 4z"/></svg>
+          Rechercher
+        </button>
+      </form>
+
+      <p class="status" id="locate-status"></p>
+      <div id="map"></div>
+      <ul class="shop-list" id="shop-list"></ul>
+
+      <button class="btn btn-ghost btn-relocate" id="btn-locate" type="button">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        Actualiser ma position
+      </button>
+    </div>
+
+    <!-- Résultats de recherche -->
+    <div id="recherche-results" hidden>
+      <div class="results-header">
+        <button class="modal-close" id="btn-results-back" type="button" aria-label="Retour">←</button>
+        <h2 id="results-title"></h2>
       </div>
-    </form>
-
-    <p class="status" id="locate-status"></p>
-    <div id="map"></div>
-    <ul class="shop-list" id="shop-list"></ul>
-
-    <button class="btn btn-ghost btn-relocate" id="btn-locate" type="button">
-      <svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
-      Actualiser ma position
-    </button>
+      <p class="demo-badge">Résultats de démonstration — à connecter à une vraie source de données</p>
+      <ul class="result-list" id="result-list"></ul>
+      <p class="empty-state" id="result-empty" hidden></p>
+    </div>
   </section>
 
   <!-- ===== SCANNER ===== -->
@@ -182,6 +196,18 @@
         <div class="source-chips" data-chips="shop"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===== Fiche vinyle (résultat de recherche) ===== -->
+<div class="modal-backdrop" id="vinyl-modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="vinyl-modal-title">
+    <button class="modal-close" id="vinyl-modal-close" type="button" aria-label="Fermer">✕</button>
+    <h2 class="shop-modal-title" id="vinyl-modal-title"></h2>
+    <p class="demo-badge">Carte et disquaires de démonstration — à connecter à une vraie source de données</p>
+    <div id="vinyl-map"></div>
+    <ul class="shop-list" id="vinyl-shop-list"></ul>
+    <div class="vinyl-links" id="vinyl-links"></div>
   </div>
 </div>
 
