@@ -32,6 +32,9 @@
         <p>Local &amp; Online Discothèque</p>
       </div>
     </div>
+    <button class="btn-settings" id="btn-settings" type="button" aria-label="Réglages">
+      <svg viewBox="0 0 24 24" class="icon"><path d="M19.4 13a7.4 7.4 0 0 0 .06-1 7.4 7.4 0 0 0-.06-1l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.4.96a7.5 7.5 0 0 0-1.7-1L14.5 2.6a.5.5 0 0 0-.5-.4h-3.84a.5.5 0 0 0-.5.4l-.36 2.6a7.5 7.5 0 0 0-1.7 1l-2.4-.96a.5.5 0 0 0-.6.22L2.68 8.78a.5.5 0 0 0 .12.64L4.83 11a7.4 7.4 0 0 0 0 2l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.6.22l2.4-.96c.52.42 1.09.76 1.7 1l.36 2.6c.05.24.26.4.5.4h3.84c.24 0 .45-.16.5-.4l.36-2.6c.61-.24 1.18-.58 1.7-1l2.4.96c.2.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64L19.4 13zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>
+    </button>
   </header>
 
   <!-- ===== RECHERCHE ===== -->
@@ -141,7 +144,7 @@
     <p class="status" id="preview-status"></p>
     <p class="demo-badge" id="demo-badge" hidden>Suggestion automatique — démo, à vérifier</p>
     <canvas id="capture-canvas" hidden></canvas>
-    <form id="record-form">
+    <form id="record-form" class="field-form">
       <label>Artiste
         <input type="text" name="artist" required placeholder="Ex : Nina Simone">
       </label>
@@ -198,6 +201,35 @@
     <ul class="shop-list" id="vinyl-shop-list"></ul>
     <p class="section-label">Vinyle disponible en ligne :</p>
     <div class="vinyl-links" id="vinyl-links"></div>
+  </div>
+</div>
+
+<!-- ===== Réglages ===== -->
+<div class="modal-backdrop" id="settings-modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <button class="modal-close" id="settings-modal-close" type="button" aria-label="Fermer">✕</button>
+    <h2 class="shop-modal-title" id="settings-modal-title">Réglages</h2>
+
+    <p class="hint">
+      Pour une vraie reconnaissance de pochette au scan, branche une clé
+      <strong>Google Cloud Vision API</strong> (payante au-delà d'un petit quota gratuit).
+      Sans clé, le scan reste en mode démonstration.
+    </p>
+
+    <form id="settings-form" class="field-form">
+      <label>Clé API Google Cloud Vision
+        <input type="password" name="visionApiKey" placeholder="Colle ta clé ici" autocomplete="off">
+      </label>
+      <p class="hint">
+        Cette clé reste uniquement dans ce navigateur (stockage local) — elle n'est jamais envoyée ailleurs qu'à l'API Google, directement depuis ton appareil.
+        Pense à la restreindre dans la console Google Cloud (API Vision uniquement + domaine autorisé) et à fixer une alerte de budget.
+      </p>
+      <p class="status" id="settings-status"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="btn-clear-key">Supprimer la clé</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
   </div>
 </div>
 

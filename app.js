@@ -557,17 +557,95 @@ function captureModalPhoto() {
   modalCoverStatic.hidden = false;
   modalCoverStatic.innerHTML = `<img src="${dataUrl}" alt="Pochette">`;
   modalSpinner.hidden = false;
+  demoBadge.hidden = true;
+  modalCameraStatus.textContent = '';
 
-  setTimeout(() => {
+  analyzeCapturedCover(dataUrl);
+}
+
+function applySuggestion(suggestion, badgeText) {
+  recordForm.artist.value = suggestion.artist || '';
+  recordForm.title.value = suggestion.title || '';
+  recordForm.year.value = suggestion.year || '';
+  recordForm.genre.value = suggestion.genre || '';
+  demoBadge.textContent = badgeText;
+  demoBadge.hidden = false;
+  updateGenreSuggestions();
+}
+
+async function analyzeCapturedCover(dataUrl) {
+  const apiKey = getVisionApiKey();
+
+  if (!apiKey) {
+    setTimeout(() => {
+      modalSpinner.hidden = true;
+      applySuggestion(pickDemoSuggestion(), 'Suggestion automatique — démo, à vérifier (aucune clé Vision configurée)');
+    }, 900);
+    return;
+  }
+
+  modalCameraStatus.textContent = "Analyse de la pochette via Google Vision…";
+  try {
+    const suggestion = await recognizeCoverWithVision(dataUrl, apiKey);
     modalSpinner.hidden = true;
-    const suggestion = pickDemoSuggestion();
-    recordForm.artist.value = suggestion.artist;
-    recordForm.title.value = suggestion.title;
-    recordForm.year.value = suggestion.year;
-    recordForm.genre.value = suggestion.genre;
-    demoBadge.hidden = false;
-    updateGenreSuggestions();
-  }, 900);
+    if (suggestion) {
+      modalCameraStatus.textContent = '';
+      applySuggestion(suggestion, "Suggestion automatique (analyse d'image Google Vision) — à vérifier");
+    } else {
+      modalCameraStatus.textContent = 'Aucune correspondance trouvée pour cette pochette — renseignez les informations manuellement.';
+    }
+  } catch (err) {
+    console.warn(err);
+    modalSpinner.hidden = true;
+    modalCameraStatus.textContent = "Erreur lors de l'analyse (clé invalide, quota dépassé ou réseau) — renseignez les informations manuellement.";
+  }
+}
+
+/* Reconnaissance réelle via l'API Google Cloud Vision (WEB_DETECTION) :
+   compare l'image à l'index web de Google pour retrouver une pochette
+   déjà référencée en ligne. Heuristique : si une page Discogs correspond,
+   son titre suit presque toujours le format "Artiste - Album (...)". À
+   défaut, on retombe sur la meilleure estimation brute de Google. */
+async function recognizeCoverWithVision(dataUrl, apiKey) {
+  const base64 = dataUrl.split(',')[1];
+  const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(apiKey)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requests: [{
+        image: { content: base64 },
+        features: [{ type: 'WEB_DETECTION', maxResults: 8 }],
+      }],
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Vision API ${res.status}: ${await res.text()}`);
+  }
+  const data = await res.json();
+  const web = data.responses && data.responses[0] && data.responses[0].webDetection;
+  if (!web) return null;
+
+  const pages = web.pagesWithMatchingImages || [];
+  const discogsPage = pages.find((p) => /discogs\.com\/(release|master)/i.test(p.url || ''));
+  if (discogsPage && discogsPage.pageTitle) {
+    const parsed = parseDiscogsTitle(discogsPage.pageTitle);
+    if (parsed) return parsed;
+  }
+
+  const bestGuess = web.bestGuessLabels && web.bestGuessLabels[0] && web.bestGuessLabels[0].label;
+  if (bestGuess) {
+    return { artist: '', title: bestGuess, year: '', genre: '' };
+  }
+
+  return null;
+}
+
+function parseDiscogsTitle(pageTitle) {
+  let title = pageTitle.replace(/\s*\|\s*Discogs\s*$/i, '').trim();
+  title = title.replace(/\s*\([^)]*\)\s*(for sale)?\s*$/i, '').trim();
+  const sepMatch = title.match(/^(.+?)\s*[-–]\s*(.+)$/);
+  if (!sepMatch) return null;
+  return { artist: sepMatch[1].trim(), title: sepMatch[2].trim(), year: '', genre: '' };
 }
 
 btnModalCapture.addEventListener('click', captureModalPhoto);
@@ -576,6 +654,60 @@ function startScanFlow() {
   openRecordModal({ cover: null, artist: '', title: '', year: '', genre: '', color: '' }, { isNew: true });
   startModalCamera();
 }
+
+/* =========================================================
+   Réglages — clé API Google Cloud Vision
+   ========================================================= */
+const VISION_KEY_STORAGE = 'diamant.visionApiKey';
+
+function getVisionApiKey() {
+  try {
+    return localStorage.getItem(VISION_KEY_STORAGE) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function setVisionApiKey(key) {
+  try {
+    if (key) localStorage.setItem(VISION_KEY_STORAGE, key);
+    else localStorage.removeItem(VISION_KEY_STORAGE);
+  } catch (e) {
+    console.warn('Sauvegarde de la clé impossible', e);
+  }
+}
+
+const settingsModalBackdrop = document.getElementById('settings-modal-backdrop');
+const settingsForm = document.getElementById('settings-form');
+const settingsStatus = document.getElementById('settings-status');
+
+document.getElementById('btn-settings').addEventListener('click', () => {
+  settingsForm.visionApiKey.value = getVisionApiKey();
+  settingsStatus.textContent = '';
+  settingsModalBackdrop.hidden = false;
+});
+
+document.getElementById('settings-modal-close').addEventListener('click', () => {
+  settingsModalBackdrop.hidden = true;
+});
+settingsModalBackdrop.addEventListener('click', (e) => {
+  if (e.target === settingsModalBackdrop) settingsModalBackdrop.hidden = true;
+});
+
+settingsForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const key = settingsForm.visionApiKey.value.trim();
+  setVisionApiKey(key);
+  settingsStatus.textContent = key
+    ? 'Clé enregistrée sur cet appareil.'
+    : 'Aucune clé enregistrée — le scan reste en mode démonstration.';
+});
+
+document.getElementById('btn-clear-key').addEventListener('click', () => {
+  setVisionApiKey('');
+  settingsForm.visionApiKey.value = '';
+  settingsStatus.textContent = 'Clé supprimée — le scan repasse en mode démonstration.';
+});
 
 function vinylPlaceholderSvg() {
   return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#e8dcc3" stroke-width="3"/><circle cx="50" cy="50" r="14" fill="#e8dcc3"/></svg>`;

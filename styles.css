@@ -74,6 +74,22 @@ html, body {
   color: var(--ink-soft);
 }
 
+.btn-settings {
+  position: absolute;
+  top: 22px;
+  right: 20px;
+  background: var(--paper-dark);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.btn-settings .icon { fill: var(--ink-soft); }
+
 /* ===== Panels ===== */
 .panel { padding: 18px 16px 24px; }
 
@@ -471,7 +487,7 @@ select#filter-genre {
   margin: 0 auto 14px;
 }
 
-#record-form label {
+.field-form label {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
@@ -480,7 +496,7 @@ select#filter-genre {
   letter-spacing: 0.05em;
   margin-bottom: 12px;
 }
-#record-form input {
+.field-form input {
   display: block;
   width: 100%;
   margin-top: 6px;
