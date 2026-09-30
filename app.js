@@ -23,7 +23,11 @@ const I18N = {
   en: {
     page_title: 'Diamant — your record shop',
     tagline: 'Local & Online Record Shop',
-    settings_aria: 'Settings',
+    profile_aria: 'Profile',
+    profile_title: 'Profile',
+    signin_google: 'Sign in with Google',
+    signout: 'Sign out',
+    signin_error: 'Sign-in failed — please try again.',
     home_cta: 'Start to dig :',
     nav_search: 'Search',
     nav_scan: 'Scan',
@@ -89,7 +93,6 @@ const I18N = {
     dot_blue: 'Lent out',
     dot_plum: 'For sale',
     dot_terracotta: 'Rare',
-    settings_title: 'Settings',
     settings_language_label: 'Language',
     settings_hint_html: 'For real cover recognition when scanning, connect a <strong>Google Cloud Vision API</strong> key (paid beyond a small free quota). A shared demo key is already active — you can use your own instead.',
     settings_key_label: 'Google Cloud Vision API key',
@@ -106,7 +109,11 @@ const I18N = {
   fr: {
     page_title: 'Diamant — votre discothèque',
     tagline: 'Local & Online Discothèque',
-    settings_aria: 'Réglages',
+    profile_aria: 'Profil',
+    profile_title: 'Profil',
+    signin_google: 'Se connecter avec Google',
+    signout: 'Se déconnecter',
+    signin_error: 'Échec de la connexion — réessaie.',
     home_cta: 'Commence à fouiller :',
     nav_search: 'Recherche',
     nav_scan: 'Scanner',
@@ -172,7 +179,6 @@ const I18N = {
     dot_blue: 'Prêté',
     dot_plum: 'À vendre',
     dot_terracotta: 'Rare',
-    settings_title: 'Réglages',
     settings_language_label: 'Langue',
     settings_hint_html: "Pour une vraie reconnaissance de pochette au scan, branche une clé <strong>Google Cloud Vision API</strong> (payante au-delà d'un petit quota gratuit). Une clé démo partagée est déjà active — tu peux utiliser la tienne à la place.",
     settings_key_label: 'Clé API Google Cloud Vision',
@@ -912,6 +918,57 @@ function setVisionApiKey(key) {
   }
 }
 
+/* =========================================================
+   Profil — connexion Google (Firebase Authentication)
+   ========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyA17VBI8J5fa0JP0aqxrXx_2RSFiRguG9c',
+  authDomain: 'diamant-510210.firebaseapp.com',
+  projectId: 'diamant-510210',
+  storageBucket: 'diamant-510210.firebasestorage.app',
+  messagingSenderId: '984391294375',
+  appId: '1:984391294375:web:16fc34c229c3dcdeeb6a82',
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+
+const profileAvatarIcon = document.getElementById('profile-avatar-icon');
+const profileDefaultIcon = document.getElementById('profile-default-icon');
+const profileSignedOut = document.getElementById('profile-signed-out');
+const profileSignedIn = document.getElementById('profile-signed-in');
+const profileAvatar = document.getElementById('profile-avatar');
+const profileName = document.getElementById('profile-name');
+const profileEmail = document.getElementById('profile-email');
+const profileStatus = document.getElementById('profile-status');
+
+auth.onAuthStateChanged((user) => {
+  profileSignedOut.hidden = !!user;
+  profileSignedIn.hidden = !user;
+  if (user) {
+    profileAvatarIcon.src = user.photoURL || '';
+    profileAvatarIcon.hidden = !user.photoURL;
+    profileDefaultIcon.hidden = !!user.photoURL;
+    profileAvatar.src = user.photoURL || '';
+    profileName.textContent = user.displayName || '';
+    profileEmail.textContent = user.email || '';
+  } else {
+    profileAvatarIcon.hidden = true;
+    profileDefaultIcon.hidden = false;
+  }
+});
+
+document.getElementById('btn-google-signin').addEventListener('click', async () => {
+  profileStatus.textContent = '';
+  try {
+    await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  } catch (err) {
+    console.warn(err);
+    profileStatus.textContent = t('signin_error');
+  }
+});
+
+document.getElementById('btn-sign-out').addEventListener('click', () => auth.signOut());
+
 const settingsModalBackdrop = document.getElementById('settings-modal-backdrop');
 const settingsForm = document.getElementById('settings-form');
 const settingsStatus = document.getElementById('settings-status');
@@ -922,6 +979,7 @@ document.getElementById('btn-settings').addEventListener('click', () => {
   settingsForm.visionApiKey.value = personalKey;
   settingsLanguage.value = currentLang;
   settingsStatus.textContent = '';
+  profileStatus.textContent = '';
   settingsModalBackdrop.hidden = false;
 });
 
