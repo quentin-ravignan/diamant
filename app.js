@@ -593,6 +593,7 @@ function openRecordModal(record, { isNew, showDemoBadge } = {}) {
   state.pendingCover = record.cover || null;
 
   stopCamera();
+  stopPreview();
   modalCameraStatus.textContent = '';
   modalSpinner.hidden = true;
   modalCoverStatic.hidden = false;
@@ -614,14 +615,66 @@ function openRecordModal(record, { isNew, showDemoBadge } = {}) {
 
   updateGenreSuggestions();
   modalBackdrop.hidden = false;
+
+  if (!isNew) playAlbumPreview(record);
 }
 
 function closeModal() {
   stopCamera();
+  stopPreview();
   modalBackdrop.hidden = true;
   state.editingId = null;
   state.pendingCover = null;
   recordForm.reset();
+}
+
+/* =========================================================
+   Aperçu audio (iTunes Search API — extraits gratuits et légaux,
+   ~30 s, fournis par Apple pour cet usage précis. On ne peut pas
+   diffuser un vrai extrait "du vinyle" lui-même : aucune source
+   libre de droits ne le permettrait.)
+   ========================================================= */
+const previewStatus = document.getElementById('preview-status');
+let previewAudio = null;
+let previewStopTimer = null;
+
+function stopPreview() {
+  if (previewAudio) {
+    previewAudio.pause();
+    previewAudio.src = '';
+    previewAudio = null;
+  }
+  if (previewStopTimer) {
+    clearTimeout(previewStopTimer);
+    previewStopTimer = null;
+  }
+  previewStatus.textContent = '';
+}
+
+async function playAlbumPreview(record) {
+  stopPreview();
+  if (!record.artist || !record.title) return;
+  previewStatus.textContent = "Recherche d'un extrait…";
+  try {
+    const term = encodeURIComponent(`${record.artist} ${record.title}`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`);
+    if (!res.ok) throw new Error('iTunes ' + res.status);
+    const data = await res.json();
+    const track = data.results && data.results[0];
+    if (!track || !track.previewUrl) {
+      previewStatus.textContent = 'Aucun extrait audio trouvé pour cet album.';
+      return;
+    }
+    previewAudio = new Audio(track.previewUrl);
+    previewAudio.addEventListener('ended', stopPreview);
+    await previewAudio.play();
+    previewStatus.textContent = `Extrait en écoute : ${track.trackName} (30 s, via iTunes)`;
+    previewStopTimer = setTimeout(stopPreview, 60000);
+  } catch (err) {
+    console.warn(err);
+    previewStatus.textContent = "Extrait audio indisponible pour le moment.";
+    previewAudio = null;
+  }
 }
 
 document.getElementById('modal-close').addEventListener('click', closeModal);
