@@ -99,6 +99,8 @@ html, body {
   gap: 8px;
   flex-wrap: wrap;
 }
+.city-chips { margin-bottom: 14px; }
+.chip.is-active { background: var(--accent); border-color: var(--accent); color: var(--vinyl); }
 .chip {
   flex: none;
   padding: 7px 14px;
@@ -410,13 +412,15 @@ select#filter-genre {
 .modal-close {
   position: absolute;
   top: 14px; right: 14px;
-  background: var(--paper-dark);
-  border: 1px solid var(--line);
+  background: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: 50%;
   width: 32px; height: 32px;
   cursor: pointer;
   font-size: 0.9rem;
-  color: var(--ink-soft);
+  font-weight: 700;
+  color: var(--vinyl);
+  box-shadow: var(--shadow);
 }
 
 .modal-cover {

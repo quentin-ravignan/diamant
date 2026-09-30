@@ -212,6 +212,7 @@ function locateAndFindShops() {
     return;
   }
   locateStatus.textContent = 'Localisation en cours…';
+  document.querySelectorAll('.city-chips .chip').forEach((c) => c.classList.remove('is-active'));
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const { latitude, longitude } = pos.coords;
@@ -231,6 +232,27 @@ function locateAndFindShops() {
 }
 
 btnLocate.addEventListener('click', locateAndFindShops);
+
+/* Coordonnées de centre-ville (géocodées via Nominatim/OpenStreetMap),
+   pour parcourir une ville sans dépendre de la géolocalisation. */
+const CITY_COORDS = {
+  paris: { lat: 48.8588897, lon: 2.320041, zoom: 13 },
+  nantes: { lat: 47.2186371, lon: -1.5541362, zoom: 13 },
+  arcachon: { lat: 44.6616428, lon: -1.1700018, zoom: 14 },
+};
+
+document.querySelectorAll('.city-chips .chip').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    const city = CITY_COORDS[chip.dataset.city];
+    if (!city) return;
+    document.querySelectorAll('.city-chips .chip').forEach((c) => c.classList.toggle('is-active', c === chip));
+    state.lastPosition = { lat: city.lat, lon: city.lon };
+    initMapIfNeeded();
+    map.setView([city.lat, city.lon], city.zoom);
+    markersLayer.clearLayers();
+    findNearbyRecordShops(city.lat, city.lon);
+  });
+});
 
 async function findNearbyRecordShops(lat, lon) {
   locateStatus.textContent = 'Recherche des disquaires à proximité…';
