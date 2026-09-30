@@ -73,10 +73,18 @@ html, body {
   width: 40px;
   height: 40px;
   flex: none;
-  animation: spin-disc 9s linear infinite;
+  animation: spin-disc 4.5s linear infinite;
+  transform-origin: 50% 52%;
 }
+/* Rotation + léger tangage vertical, comme un vinyle un peu voilé sur
+   la platine — le tangage seul ne suffit pas à montrer la rotation
+   (le disque est symétrique), d'où les rayures ajoutées au SVG. */
 @keyframes spin-disc {
-  to { transform: rotate(360deg); }
+  0%   { transform: rotate(0deg)   translateY(0); }
+  25%  { transform: rotate(90deg)  translateY(-1.4px); }
+  50%  { transform: rotate(180deg) translateY(0); }
+  75%  { transform: rotate(270deg) translateY(1.4px); }
+  100% { transform: rotate(360deg) translateY(0); }
 }
 .brand-text h1 {
   font-family: var(--font-display);

@@ -1218,7 +1218,6 @@ const HOME_ALBUMS = [
   { artist: 'The Rolling Stones', title: 'Sticky Fingers' },
   { artist: 'AC/DC', title: 'Back in Black' },
   { artist: "Guns N' Roses", title: 'Appetite for Destruction' },
-  { artist: 'Radiohead', title: 'OK Computer' },
 ];
 
 function normalizeForMatch(s) {
