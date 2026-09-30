@@ -70,8 +70,8 @@ body {
 }
 .brand-text p {
   margin: 1px 0 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
