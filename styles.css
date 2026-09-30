@@ -616,6 +616,13 @@ select#filter-genre {
   margin: 0 auto 14px;
 }
 
+.source-note {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+}
+
 .field-form label {
   display: block;
   font-size: 0.75rem;
@@ -766,6 +773,7 @@ select#filter-genre {
   justify-content: center;
 }
 .result-cover svg { width: 55%; height: 55%; }
+.result-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
 
 .result-info { flex: 1; min-width: 0; }
 .result-artist { font-size: 0.76rem; color: var(--ink-soft); font-weight: 600; margin: 0; }

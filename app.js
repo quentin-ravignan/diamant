@@ -47,15 +47,14 @@ const I18N = {
     shop_no_address: 'Address not provided',
     directions: 'Directions →',
     results_for: 'Results for « {query} »',
-    results_demo_badge: 'Demo results — to be connected to a real data source',
-    results_empty: 'No result in our demo catalog for « {query} ». This catalog only illustrates a handful of records, until a real data source is available.',
+    results_source_note: 'Album info via iTunes — tap a result to find where to buy the vinyl.',
+    results_loading: 'Searching…',
+    results_error: "Couldn't reach the search service right now.",
+    results_empty: 'No album found for « {query} ». Try a different spelling or another artist.',
     back_aria: 'Back',
     close_aria: 'Close',
     capture_aria: 'Capture',
-    vinyl_demo_badge: 'Demo map and record shops — to be connected to a real data source',
-    vinyl_local_label: 'Vinyl available locally:',
-    vinyl_online_label: 'Vinyl available online:',
-    vinyl_availability_demo: '{km} km · fictional availability (demo)',
+    vinyl_online_label: 'Find it online:',
     link_view_on: 'View on {source}',
     shop_phone_unknown: 'Phone number not provided',
     shop_website_unknown: 'Website not provided',
@@ -134,15 +133,14 @@ const I18N = {
     shop_no_address: 'Adresse non renseignée',
     directions: 'Itinéraire →',
     results_for: 'Résultats pour « {query} »',
-    results_demo_badge: 'Résultats de démonstration — à connecter à une vraie source de données',
-    results_empty: "Aucun résultat dans notre catalogue de démonstration pour « {query} ». Ce catalogue n'illustre que quelques disques, en attendant une vraie source de données.",
+    results_source_note: 'Infos album via iTunes — touchez un résultat pour trouver où acheter le vinyle.',
+    results_loading: 'Recherche…',
+    results_error: 'Impossible de contacter le service de recherche pour le moment.',
+    results_empty: "Aucun album trouvé pour « {query} ». Essayez une autre orthographe ou un autre artiste.",
     back_aria: 'Retour',
     close_aria: 'Fermer',
     capture_aria: 'Capturer',
-    vinyl_demo_badge: 'Carte et disquaires de démonstration — à connecter à une vraie source de données',
-    vinyl_local_label: 'Vinyle disponible en local :',
-    vinyl_online_label: 'Vinyle disponible en ligne :',
-    vinyl_availability_demo: '{km} km · disponibilité fictive (démo)',
+    vinyl_online_label: 'Le trouver en ligne :',
     link_view_on: 'Voir sur {source}',
     shop_phone_unknown: 'Numéro non renseigné',
     shop_website_unknown: 'Site web non renseigné',
@@ -378,41 +376,68 @@ document.getElementById('btn-results-back').addEventListener('click', () => {
   rechercheHome.hidden = false;
 });
 
-function showResults(query) {
+/* Recherche réelle d'albums via l'API iTunes Search (pas de clé requise,
+   déjà utilisée pour les pochettes de la home page). Ne donne ni prix ni
+   stock réel de vinyles : c'est pour ça que chaque résultat renvoie vers
+   Discogs/Leboncoin/Fnac plutôt que d'afficher un prix ou une distance
+   inventés. */
+async function searchItunesAlbums(query) {
+  const url = `https://itunes.apple.com/search?media=music&entity=album&limit=25&term=${encodeURIComponent(query)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('iTunes Search ' + res.status);
+  const data = await res.json();
+  const seen = new Set();
+  const albums = [];
+  for (const item of data.results || []) {
+    const key = `${item.artistName}|${item.collectionName}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    albums.push({
+      artist: item.artistName || '',
+      title: item.collectionName || '',
+      year: item.releaseDate ? new Date(item.releaseDate).getFullYear() : '',
+      genre: item.primaryGenreName || '',
+      cover: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '400x400bb') : '',
+    });
+  }
+  return albums;
+}
+
+async function showResults(query) {
   rechercheHome.hidden = true;
   rechercheResults.hidden = false;
   resultsTitle.textContent = t('results_for', { query });
 
-  const term = query.toLowerCase();
-  const matches = DEMO_CATALOG.filter((v) =>
-    `${v.artist} ${v.title}`.toLowerCase().includes(term)
-  );
+  resultList.innerHTML = '';
+  resultEmpty.hidden = false;
+  resultEmpty.textContent = t('results_loading');
 
-  resultEmpty.hidden = matches.length > 0;
+  let albums;
+  try {
+    albums = await searchItunesAlbums(query);
+  } catch (err) {
+    console.warn(err);
+    resultEmpty.hidden = false;
+    resultEmpty.textContent = t('results_error');
+    return;
+  }
+
+  resultEmpty.hidden = albums.length > 0;
   resultEmpty.textContent = t('results_empty', { query });
 
-  resultList.innerHTML = matches.map((v, i) => `
+  resultList.innerHTML = albums.map((v, i) => `
     <li class="result-item" data-index="${i}">
-      <div class="result-cover" style="background:${v.swatch}">${vinylPlaceholderSvg()}</div>
+      <div class="result-cover">${v.cover ? `<img src="${v.cover}" alt="" loading="lazy">` : vinylPlaceholderSvg()}</div>
       <div class="result-info">
         <p class="result-artist">${escapeHtml(v.artist)}</p>
         <p class="result-title">${escapeHtml(v.title)}</p>
         <p class="result-year">${v.year}${v.genre ? ' · ' + escapeHtml(v.genre) : ''}</p>
       </div>
-      <div class="result-side">
-        <span class="result-price">${escapeHtml(v.price)}</span>
-        <span class="result-distance">${v.nearestShopKm} km</span>
-        <span class="source-dots">
-          <span class="source-dot${v.sources.discogs ? ' is-available' : ''}" title="Discogs"></span>
-          <span class="source-dot${v.sources.leboncoin ? ' is-available' : ''}" title="Leboncoin"></span>
-          <span class="source-dot${v.sources.fnac ? ' is-available' : ''}" title="Fnac"></span>
-        </span>
-      </div>
     </li>
   `).join('');
 
   resultList.querySelectorAll('.result-item').forEach((li) => {
-    li.addEventListener('click', () => openVinylModal(matches[Number(li.dataset.index)]));
+    li.addEventListener('click', () => openVinylModal(albums[Number(li.dataset.index)]));
   });
 }
 
@@ -655,42 +680,10 @@ shopInventoryFilter.addEventListener('input', () => {
    ========================================================= */
 const vinylModalBackdrop = document.getElementById('vinyl-modal-backdrop');
 const vinylModalTitle = document.getElementById('vinyl-modal-title');
-const vinylShopList = document.getElementById('vinyl-shop-list');
 const vinylLinks = document.getElementById('vinyl-links');
 
-let vinylMap = null;
-let vinylMarkersLayer = null;
-
-function initVinylMapIfNeeded() {
-  if (vinylMap) return;
-  vinylMap = L.map('vinyl-map', { zoomControl: false, attributionControl: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(vinylMap);
-  vinylMarkersLayer = L.layerGroup().addTo(vinylMap);
-}
-
-/* Noms de disquaires fictifs, pour ne jamais laisser croire qu'un vrai
-   magasin a ce disque en stock tant qu'aucune source de données réelle
-   n'est branchée. */
-const DEMO_SHOP_NAMES = ['Le Sillon Perdu', 'Microsillon Café', 'Bac à Vinyles'];
-
 function openVinylModal(vinyl) {
-  vinylModalTitle.textContent = `${vinyl.artist} — ${vinyl.title} (${vinyl.year})`;
-
-  const center = state.lastPosition || { lat: 48.8566, lon: 2.3522 };
-  const offsets = [[0.01, 0.015], [-0.012, 0.008], [0.006, -0.014]];
-  const demoShops = offsets.map((off, i) => ({
-    name: DEMO_SHOP_NAMES[i],
-    lat: center.lat + off[0],
-    lon: center.lon + off[1],
-    km: (vinyl.nearestShopKm + i * 1.4).toFixed(1),
-  }));
-
-  vinylShopList.innerHTML = demoShops.map((s) => `
-    <li>
-      <span class="shop-name">${escapeHtml(s.name)}</span>
-      <span class="shop-meta">${t('vinyl_availability_demo', { km: s.km })}</span>
-    </li>
-  `).join('');
+  vinylModalTitle.textContent = vinyl.year ? `${vinyl.artist} — ${vinyl.title} (${vinyl.year})` : `${vinyl.artist} — ${vinyl.title}`;
 
   const query = `${vinyl.artist} ${vinyl.title}`;
   vinylLinks.innerHTML = ['leboncoin', 'discogs', 'fnac'].map((source) => `
@@ -701,16 +694,6 @@ function openVinylModal(vinyl) {
   `).join('');
 
   vinylModalBackdrop.hidden = false;
-
-  requestAnimationFrame(() => {
-    initVinylMapIfNeeded();
-    vinylMap.invalidateSize();
-    vinylMap.setView([center.lat, center.lon], 13);
-    vinylMarkersLayer.clearLayers();
-    demoShops.forEach((s) => {
-      L.marker([s.lat, s.lon]).addTo(vinylMarkersLayer).bindPopup(`<strong>${escapeHtml(s.name)}</strong> (demo)`);
-    });
-  });
 }
 
 document.getElementById('vinyl-modal-close').addEventListener('click', () => { vinylModalBackdrop.hidden = true; });
