@@ -626,9 +626,10 @@ async function recognizeCoverWithVision(dataUrl, apiKey) {
   if (!web) return null;
 
   const pages = web.pagesWithMatchingImages || [];
-  const discogsPage = pages.find((p) => /discogs\.com\/(release|master)/i.test(p.url || ''));
-  if (discogsPage && discogsPage.pageTitle) {
-    const parsed = parseDiscogsTitle(discogsPage.pageTitle);
+  const candidatePattern = /discogs\.com\/(release|master)|deezer\.com\/[a-z-]+\/album|open\.spotify\.com\/album/i;
+  for (const page of pages) {
+    if (!page.pageTitle || !candidatePattern.test(page.url || '')) continue;
+    const parsed = parsePageTitle(page.pageTitle, page.url);
     if (parsed) return parsed;
   }
 
@@ -640,8 +641,16 @@ async function recognizeCoverWithVision(dataUrl, apiKey) {
   return null;
 }
 
-function parseDiscogsTitle(pageTitle) {
-  let title = pageTitle.replace(/\s*\|\s*Discogs\s*$/i, '').trim();
+/* Chaque plateforme formate son <title> de page différemment ; ce sont
+   les motifs observés en pratique sur Discogs, Spotify et Deezer. */
+function parsePageTitle(pageTitle, url) {
+  if (/open\.spotify\.com/i.test(url)) {
+    const m = pageTitle.match(/^(.+?)\s*-\s*Album by\s+(.+?)\s*[-|]\s*Spotify\s*$/i);
+    if (m) return { artist: m[2].trim(), title: m[1].trim(), year: '', genre: '' };
+    return null;
+  }
+
+  let title = pageTitle.replace(/\s*[-|]\s*(Discogs|Deezer)\s*$/i, '').trim();
   title = title.replace(/\s*\([^)]*\)\s*(for sale)?\s*$/i, '').trim();
   const sepMatch = title.match(/^(.+?)\s*[-–]\s*(.+)$/);
   if (!sepMatch) return null;
