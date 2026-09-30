@@ -1,26 +1,30 @@
 :root {
-  --paper: #17140f;
-  --paper-dark: #221d16;
-  --paper-darker: #2e2718;
-  --ink: #f2ead9;
-  --ink-soft: #b7a98e;
+  --paper: #f8f4e9;
+  --paper-dark: #eee6d3;
+  --paper-darker: #e3d8bc;
+  --ink: #17140f;
+  --ink-soft: #5a5346;
   --vinyl: #0b0a08;
   --vinyl-soft: #1a1611;
-  --accent: #d9713f;
-  --accent-dark: #e99a5c;
-  --mustard: #e3b158;
-  --line: rgba(242, 234, 217, 0.1);
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --accent: #b6432c;
+  --accent-dark: #8f341f;
+  --mustard: #cc9a3a;
+  --line: rgba(23, 20, 15, 0.14);
+  --shadow: 0 6px 18px rgba(23, 20, 15, 0.12);
   --radius: 14px;
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "Inter", system-ui, sans-serif;
 
-  --dot-red: #d9713f;
-  --dot-mustard: #e3b158;
-  --dot-green: #7a9a7a;
-  --dot-blue: #6f95a3;
-  --dot-plum: #a06d89;
-  --dot-terracotta: #e0976c;
+  /* Toujours claire, quel que soit le thème : pour tout élément posé sur
+     le noir vinyle (pochette placeholder, bague de capture caméra). */
+  --on-vinyl: #f2ead9;
+
+  --dot-red: #b6432c;
+  --dot-mustard: #cc9a3a;
+  --dot-green: #5c7a5c;
+  --dot-blue: #4f6f7a;
+  --dot-plum: #7a5266;
+  --dot-terracotta: #c97b52;
 }
 
 * { box-sizing: border-box; }
@@ -36,8 +40,8 @@ html, body {
 
 body {
   background-image:
-    radial-gradient(circle at 15% 8%, rgba(217, 113, 63, 0.08), transparent 40%),
-    radial-gradient(circle at 85% 92%, rgba(227, 177, 88, 0.09), transparent 45%);
+    radial-gradient(circle at 15% 8%, rgba(182, 67, 44, 0.05), transparent 40%),
+    radial-gradient(circle at 85% 92%, rgba(204, 154, 58, 0.06), transparent 45%);
 }
 
 .app {
@@ -213,14 +217,14 @@ body {
   width: 62px; height: 62px;
   border-radius: 50%;
   background: transparent;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--on-vinyl);
   padding: 4px;
 }
 .btn-capture span {
   display: block;
   width: 100%; height: 100%;
   border-radius: 50%;
-  background: var(--ink);
+  background: var(--on-vinyl);
 }
 
 .spinner {
@@ -326,7 +330,7 @@ select#filter-genre {
   position: relative;
 }
 .record-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.record-cover svg { width: 40%; height: 40%; fill: var(--ink-soft); }
+.record-cover svg { width: 40%; height: 40%; fill: var(--on-vinyl); }
 
 .record-dot {
   position: absolute;
@@ -426,7 +430,7 @@ select#filter-genre {
 }
 #modal-cover-static { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .modal-cover img { width: 100%; height: 100%; object-fit: cover; }
-.modal-cover svg { width: 40%; height: 40%; fill: var(--ink-soft); }
+.modal-cover svg { width: 40%; height: 40%; fill: var(--on-vinyl); }
 
 #modal-camera-video {
   position: absolute;
@@ -451,8 +455,8 @@ select#filter-genre {
   text-align: center;
   font-size: 0.72rem;
   color: var(--accent-dark);
-  background: rgba(217,113,63,0.15);
-  border: 1px solid rgba(217,113,63,0.35);
+  background: rgba(182,67,44,0.1);
+  border: 1px solid rgba(182,67,44,0.25);
   border-radius: 999px;
   padding: 5px 10px;
   width: fit-content;
