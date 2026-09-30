@@ -37,6 +37,8 @@ const state = {
   editingId: null,
   pendingCover: null,
   filters: { yearMin: '', yearMax: '', genre: '', color: '' },
+  shops: {},
+  activeShopId: null,
 };
 
 /* =========================================================
@@ -54,17 +56,6 @@ navButtons.forEach((btn) => {
   });
 });
 
-document.querySelectorAll('.subtab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    const group = tab.closest('.subtabs');
-    const panel = tab.closest('.panel');
-    group.querySelectorAll('.subtab').forEach((t) => t.classList.toggle('is-active', t === tab));
-    panel.querySelectorAll('.subpanel').forEach((sp) => {
-      sp.classList.toggle('is-active', sp.dataset.subpanel === tab.dataset.subtab);
-    });
-  });
-});
-
 /* =========================================================
    Recherche externe (Discogs / Leboncoin / Fnac)
    ========================================================= */
@@ -74,15 +65,19 @@ const EXTERNAL_SEARCH_URLS = {
   fnac: (q) => `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${encodeURIComponent(q + ' vinyle')}`,
 };
 
-document.querySelectorAll('.search-form').forEach((form) => {
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const source = form.dataset.external;
-    const query = form.querySelector('input').value.trim();
-    if (!query) return;
-    const urlBuilder = EXTERNAL_SEARCH_URLS[source];
-    if (urlBuilder) window.open(urlBuilder(query), '_blank', 'noopener');
-  });
+function openExternalSearch(source, query) {
+  const q = (query || '').trim();
+  if (!q) return;
+  const urlBuilder = EXTERNAL_SEARCH_URLS[source];
+  if (urlBuilder) window.open(urlBuilder(q), '_blank', 'noopener');
+}
+
+const topSearchForm = document.getElementById('top-search-form');
+const topSearchInput = document.getElementById('top-search-input');
+
+topSearchForm.addEventListener('submit', (e) => e.preventDefault());
+topSearchForm.querySelectorAll('.chip').forEach((chip) => {
+  chip.addEventListener('click', () => openExternalSearch(chip.dataset.source, topSearchInput.value));
 });
 
 /* =========================================================
@@ -105,7 +100,7 @@ const btnLocate = document.getElementById('btn-locate');
 const locateStatus = document.getElementById('locate-status');
 const shopList = document.getElementById('shop-list');
 
-btnLocate.addEventListener('click', () => {
+function locateAndFindShops() {
   if (!('geolocation' in navigator)) {
     locateStatus.textContent = "La géolocalisation n'est pas disponible sur cet appareil.";
     return;
@@ -116,7 +111,8 @@ btnLocate.addEventListener('click', () => {
       const { latitude, longitude } = pos.coords;
       initMapIfNeeded();
       map.setView([latitude, longitude], 14);
-      L.marker([latitude, longitude]).addTo(markersLayer).bindPopup('Vous êtes ici').openPopup();
+      markersLayer.clearLayers();
+      L.marker([latitude, longitude]).addTo(markersLayer).bindPopup('Vous êtes ici');
       findNearbyRecordShops(latitude, longitude);
     },
     (err) => {
@@ -125,11 +121,14 @@ btnLocate.addEventListener('click', () => {
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );
-});
+}
+
+btnLocate.addEventListener('click', locateAndFindShops);
 
 async function findNearbyRecordShops(lat, lon) {
   locateStatus.textContent = 'Recherche des disquaires à proximité…';
   shopList.innerHTML = '';
+  state.shops = {};
   const radius = 5000;
   const query = `[out:json][timeout:15];(node["shop"="music"](around:${radius},${lat},${lon});node["shop"="records"](around:${radius},${lat},${lon}););out body;`;
   try {
@@ -140,30 +139,50 @@ async function findNearbyRecordShops(lat, lon) {
     });
     if (!res.ok) throw new Error('Overpass ' + res.status);
     const data = await res.json();
-    const shops = (data.elements || []).filter((el) => el.lat && el.lon);
+    const elements = (data.elements || []).filter((el) => el.lat && el.lon);
 
-    if (!shops.length) {
+    if (!elements.length) {
       locateStatus.textContent = 'Aucun disquaire référencé sur OpenStreetMap dans un rayon de 5 km.';
       return;
     }
-    locateStatus.textContent = `${shops.length} disquaire(s) trouvé(s) dans un rayon de 5 km.`;
+    locateStatus.textContent = `${elements.length} disquaire(s) trouvé(s) dans un rayon de 5 km.`;
 
-    shops.forEach((shop) => {
-      const name = shop.tags?.name || 'Disquaire';
-      const addr = [shop.tags?.['addr:housenumber'], shop.tags?.['addr:street'], shop.tags?.['addr:city']]
+    elements.forEach((el) => {
+      const tags = el.tags || {};
+      const name = tags.name || 'Disquaire';
+      const addr = [tags['addr:housenumber'], tags['addr:street'], tags['addr:postcode'], tags['addr:city']]
         .filter(Boolean).join(' ');
-      const distance = haversineKm(lat, lon, shop.lat, shop.lon).toFixed(1);
+      const distance = haversineKm(lat, lon, el.lat, el.lon).toFixed(1);
 
-      const marker = L.marker([shop.lat, shop.lon]).addTo(markersLayer);
+      const shop = {
+        id: 'osm-' + el.id,
+        name,
+        address: addr,
+        phone: tags['contact:phone'] || tags.phone || '',
+        website: tags['contact:website'] || tags.website || '',
+        distance,
+        lat: el.lat,
+        lon: el.lon,
+        inventory: [],
+      };
+      state.shops[shop.id] = shop;
+
+      const marker = L.marker([el.lat, el.lon]).addTo(markersLayer);
       marker.bindPopup(`<strong>${escapeHtml(name)}</strong><br>${escapeHtml(addr || '')}`);
+      marker.on('click', () => openShopModal(shop.id));
 
       const li = document.createElement('li');
-      const dirUrl = `https://www.openstreetmap.org/directions?from=${lat}%2C${lon}&to=${shop.lat}%2C${shop.lon}`;
+      li.dataset.shopId = shop.id;
+      const dirUrl = `https://www.openstreetmap.org/directions?from=${lat}%2C${lon}&to=${el.lat}%2C${el.lon}`;
       li.innerHTML = `
         <span class="shop-name">${escapeHtml(name)}</span>
         <span class="shop-meta">${escapeHtml(addr || 'Adresse non renseignée')} · ${distance} km</span><br>
-        <a href="${dirUrl}" target="_blank" rel="noopener">Itinéraire →</a>
+        <a href="${dirUrl}" target="_blank" rel="noopener" data-no-modal>Itinéraire →</a>
       `;
+      li.addEventListener('click', (e) => {
+        if (e.target.closest('[data-no-modal]')) return;
+        openShopModal(shop.id);
+      });
       shopList.appendChild(li);
     });
   } catch (err) {
@@ -181,6 +200,96 @@ function haversineKm(lat1, lon1, lat2, lon2) {
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
+
+/* =========================================================
+   Fiche discaire
+   ========================================================= */
+const shopModalBackdrop = document.getElementById('shop-modal-backdrop');
+const shopModalTitle = document.getElementById('shop-modal-title');
+const shopModalMeta = document.getElementById('shop-modal-meta');
+const shopInventoryFilter = document.getElementById('shop-inventory-filter');
+const shopInventoryList = document.getElementById('shop-inventory-list');
+const shopInventoryFallback = document.getElementById('shop-inventory-fallback');
+
+function locationIconSvg() {
+  return '<svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+}
+function phoneIconSvg() {
+  return '<svg viewBox="0 0 24 24" class="icon"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"/></svg>';
+}
+function webIconSvg() {
+  return '<svg viewBox="0 0 24 24" class="icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.9 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>';
+}
+
+function buildShopFallbackChips(shop) {
+  const query = shop.name;
+  return ['discogs', 'leboncoin', 'fnac'].map((source) => {
+    const label = source[0].toUpperCase() + source.slice(1);
+    return `<button type="button" class="chip" data-source="${source}">${label}</button>`;
+  }).join('');
+}
+
+function renderShopInventory(shop) {
+  const term = shopInventoryFilter.value.trim().toLowerCase();
+  const items = (shop.inventory || []).filter((v) =>
+    !term || `${v.artist} ${v.title}`.toLowerCase().includes(term)
+  );
+
+  shopInventoryList.innerHTML = items.map((v) => `
+    <li>
+      <span class="inv-title">${escapeHtml(v.artist)} — ${escapeHtml(v.title)}</span>
+      <span class="inv-meta">${v.year || '—'}${v.genre ? ' · ' + escapeHtml(v.genre) : ''}${v.price ? ' · ' + escapeHtml(v.price) : ''}</span>
+    </li>
+  `).join('');
+
+  shopInventoryList.hidden = items.length === 0;
+  shopInventoryFallback.hidden = (shop.inventory || []).length > 0;
+}
+
+function openShopModal(shopId) {
+  const shop = state.shops[shopId];
+  if (!shop) return;
+  state.activeShopId = shopId;
+
+  shopModalTitle.textContent = shop.name;
+
+  const metaRows = [];
+  metaRows.push(`<li>${locationIconSvg()}<span>${escapeHtml(shop.address || 'Adresse non renseignée')} · ${shop.distance} km</span></li>`);
+  metaRows.push(shop.phone
+    ? `<li>${phoneIconSvg()}<a href="tel:${escapeHtml(shop.phone)}">${escapeHtml(shop.phone)}</a></li>`
+    : `<li>${phoneIconSvg()}<span>Téléphone non renseigné</span></li>`);
+  metaRows.push(shop.website
+    ? `<li>${webIconSvg()}<a href="${escapeHtml(shop.website)}" target="_blank" rel="noopener">${escapeHtml(shop.website.replace(/^https?:\/\//, ''))}</a></li>`
+    : `<li>${webIconSvg()}<span>Site web non renseigné</span></li>`);
+  shopModalMeta.innerHTML = metaRows.join('');
+
+  shopInventoryFilter.value = '';
+  const chipsWrap = shopInventoryFallback.querySelector('[data-chips="shop"]');
+  chipsWrap.innerHTML = buildShopFallbackChips(shop);
+  chipsWrap.querySelectorAll('.chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const filterTerm = shopInventoryFilter.value.trim();
+      openExternalSearch(chip.dataset.source, filterTerm ? `${shop.name} ${filterTerm}` : shop.name);
+    });
+  });
+
+  renderShopInventory(shop);
+  shopModalBackdrop.hidden = false;
+}
+
+function closeShopModal() {
+  shopModalBackdrop.hidden = true;
+  state.activeShopId = null;
+}
+
+document.getElementById('shop-modal-close').addEventListener('click', closeShopModal);
+shopModalBackdrop.addEventListener('click', (e) => {
+  if (e.target === shopModalBackdrop) closeShopModal();
+});
+shopInventoryFilter.addEventListener('input', () => {
+  const shop = state.shops[state.activeShopId];
+  if (shop) renderShopInventory(shop);
+});
 
 /* =========================================================
    Scanner — caméra + capture + fiche à valider
@@ -497,3 +606,4 @@ function escapeHtml(str) {
    Init
    ========================================================= */
 renderCollection();
+locateAndFindShops();

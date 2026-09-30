@@ -78,37 +78,43 @@ body {
 /* ===== Panels ===== */
 .panel { padding: 18px 16px 24px; }
 
-.subtabs {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 12px;
+/* ===== Recherche : champ principal + carte ===== */
+.top-search {
   margin-bottom: 14px;
-  border-bottom: 1px solid var(--line);
-  scrollbar-width: none;
 }
-.subtabs::-webkit-scrollbar { display: none; }
+.top-search input {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--paper-dark);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.top-search input:focus { outline: 2px solid var(--mustard); outline-offset: 1px; }
 
-.subtab {
+.source-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip {
   flex: none;
-  padding: 8px 14px;
+  padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--paper-dark);
   color: var(--ink-soft);
   font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
 }
-.subtab.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--vinyl);
-}
+.chip:active { transform: scale(0.97); }
 
-.subpanel { display: none; }
-.subpanel.is-active { display: block; animation: fade-in 0.2s ease; }
+.btn-relocate { margin-top: 14px; width: 100%; }
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
@@ -178,8 +184,6 @@ body {
 .icon-lg { width: 44px; height: 44px; fill: var(--accent); margin-bottom: 10px; }
 
 /* ===== Map / shops ===== */
-.locate-card { margin-bottom: 14px; }
-
 #map {
   width: 100%;
   height: 220px;
@@ -197,28 +201,12 @@ body {
   border-radius: 12px;
   padding: 12px 14px;
   font-size: 0.85rem;
+  cursor: pointer;
 }
+.shop-list li:active { transform: scale(0.99); }
 .shop-list .shop-name { font-weight: 700; display: block; margin-bottom: 2px; }
 .shop-list .shop-meta { color: var(--ink-soft); font-size: 0.78rem; }
 .shop-list a { color: var(--accent-dark); text-decoration: none; font-weight: 600; }
-
-/* ===== Search forms ===== */
-.search-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.search-form input {
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--paper-dark);
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-  color: var(--ink);
-}
-.search-form input:focus { outline: 2px solid var(--mustard); outline-offset: 1px; }
 
 /* ===== Scanner ===== */
 .scan-card { margin-top: 20px; }
@@ -514,6 +502,61 @@ select#filter-genre {
 
 /* Leaflet marker popup font */
 .leaflet-popup-content { font-family: var(--font-body); font-size: 0.85rem; }
+
+/* ===== Fiche discaire ===== */
+.shop-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 6px 30px 12px 0;
+}
+
+.shop-modal-meta {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.shop-modal-meta li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.shop-modal-meta .icon { flex: none; fill: var(--accent); margin-top: 1px; }
+.shop-modal-meta a { color: var(--accent-dark); text-decoration: none; font-weight: 600; }
+
+.shop-inventory { border-top: 1px solid var(--line); padding-top: 16px; }
+.shop-inventory > input {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--paper-dark);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.shop-inventory > input:focus { outline: 2px solid var(--mustard); outline-offset: 1px; }
+
+.shop-inventory-list { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.shop-inventory-list li {
+  background: var(--paper-dark);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+.shop-inventory-list .inv-title { font-weight: 700; color: var(--ink); display: block; }
+.shop-inventory-list .inv-meta { color: var(--ink-soft); font-size: 0.78rem; }
+
+.shop-inventory-fallback .empty-state { padding: 16px 4px 10px; }
+.shop-inventory-fallback .hint { margin-bottom: 10px; }
 
 @media (min-width: 481px) {
   .bottombar { border-radius: 0 0 20px 20px; }

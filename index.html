@@ -36,53 +36,23 @@
 
   <!-- ===== RECHERCHE ===== -->
   <section class="panel" id="panel-recherche" data-panel>
-    <div class="subtabs" role="tablist" aria-label="Source de recherche">
-      <button class="subtab is-active" data-subtab="carte" type="button">Autour de moi</button>
-      <button class="subtab" data-subtab="discogs" type="button">Discogs</button>
-      <button class="subtab" data-subtab="leboncoin" type="button">Leboncoin</button>
-      <button class="subtab" data-subtab="fnac" type="button">Fnac</button>
-    </div>
-
-    <!-- Carte -->
-    <div class="subpanel is-active" data-subpanel="carte">
-      <div class="card locate-card">
-        <p class="hint">Trouvez les disquaires autour de vous, à partir des données OpenStreetMap.</p>
-        <button class="btn btn-primary" id="btn-locate" type="button">
-          <svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
-          Me localiser
-        </button>
-        <p class="status" id="locate-status"></p>
+    <form class="top-search" id="top-search-form">
+      <input type="search" id="top-search-input" placeholder="Chercher un artiste, un album…">
+      <div class="source-chips" data-chips="top">
+        <button type="button" class="chip" data-source="discogs">Discogs</button>
+        <button type="button" class="chip" data-source="leboncoin">Leboncoin</button>
+        <button type="button" class="chip" data-source="fnac">Fnac</button>
       </div>
-      <div id="map"></div>
-      <ul class="shop-list" id="shop-list"></ul>
-    </div>
+    </form>
 
-    <!-- Discogs -->
-    <div class="subpanel" data-subpanel="discogs">
-      <form class="search-form" data-external="discogs">
-        <input type="search" placeholder="Artiste, album, référence…" required>
-        <button type="submit" class="btn btn-primary">Chercher sur Discogs</button>
-      </form>
-      <p class="hint">Ouvre les résultats Discogs dans un nouvel onglet.</p>
-    </div>
+    <p class="status" id="locate-status"></p>
+    <div id="map"></div>
+    <ul class="shop-list" id="shop-list"></ul>
 
-    <!-- Leboncoin -->
-    <div class="subpanel" data-subpanel="leboncoin">
-      <form class="search-form" data-external="leboncoin">
-        <input type="search" placeholder="Artiste, album, référence…" required>
-        <button type="submit" class="btn btn-primary">Chercher sur Leboncoin</button>
-      </form>
-      <p class="hint">Ouvre les résultats Leboncoin (catégorie Vinyles) dans un nouvel onglet.</p>
-    </div>
-
-    <!-- Fnac -->
-    <div class="subpanel" data-subpanel="fnac">
-      <form class="search-form" data-external="fnac">
-        <input type="search" placeholder="Artiste, album, référence…" required>
-        <button type="submit" class="btn btn-primary">Chercher sur Fnac</button>
-      </form>
-      <p class="hint">Ouvre les résultats Fnac (rayon Vinyles) dans un nouvel onglet.</p>
-    </div>
+    <button class="btn btn-ghost btn-relocate" id="btn-locate" type="button">
+      <svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+      Actualiser ma position
+    </button>
   </section>
 
   <!-- ===== SCANNER ===== -->
@@ -193,6 +163,25 @@
         <button type="submit" class="btn btn-primary">Enregistrer</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ===== Fiche discaire ===== -->
+<div class="modal-backdrop" id="shop-modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
+    <button class="modal-close" id="shop-modal-close" type="button" aria-label="Fermer">✕</button>
+    <h2 class="shop-modal-title" id="shop-modal-title"></h2>
+    <ul class="shop-modal-meta" id="shop-modal-meta"></ul>
+
+    <div class="shop-inventory">
+      <input type="search" id="shop-inventory-filter" placeholder="Filtrer sa discothèque…">
+      <ul class="shop-inventory-list" id="shop-inventory-list"></ul>
+      <div class="shop-inventory-fallback" id="shop-inventory-fallback">
+        <p class="empty-state" id="shop-inventory-empty">Ce disquaire n'a pas encore partagé son catalogue en ligne ici.</p>
+        <p class="hint">En attendant, cherchez ses références sur :</p>
+        <div class="source-chips" data-chips="shop"></div>
+      </div>
+    </div>
   </div>
 </div>
 
