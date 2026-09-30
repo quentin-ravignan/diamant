@@ -28,6 +28,7 @@ const I18N = {
     signin_google: 'Sign in with Google',
     signout: 'Sign out',
     signin_error: 'Sign-in failed — please try again.',
+    sync_hint: 'Your Discothèque is synced to this account, on every device.',
     home_cta: 'Start to dig :',
     nav_search: 'Search',
     nav_scan: 'Scan',
@@ -114,6 +115,7 @@ const I18N = {
     signin_google: 'Se connecter avec Google',
     signout: 'Se déconnecter',
     signin_error: 'Échec de la connexion — réessaie.',
+    sync_hint: 'Ta Discothèque est synchronisée avec ce compte, sur tous tes appareils.',
     home_cta: 'Commence à fouiller :',
     nav_search: 'Recherche',
     nav_scan: 'Scanner',
@@ -775,10 +777,18 @@ function captureModalPhoto() {
   const w = modalCameraVideo.videoWidth;
   const h = modalCameraVideo.videoHeight;
   if (!w || !h) return;
-  captureCanvas.width = w;
-  captureCanvas.height = h;
-  captureCanvas.getContext('2d').drawImage(modalCameraVideo, 0, 0, w, h);
-  const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.85);
+
+  /* Réduit la photo à 640px max de côté : largement assez pour les
+     vignettes de l'app et pour Google Vision, et ça garde chaque
+     disque bien sous la limite de 1 Mo d'un document Firestore. */
+  const MAX_DIM = 640;
+  const scale = Math.min(1, MAX_DIM / Math.max(w, h));
+  const outW = Math.round(w * scale);
+  const outH = Math.round(h * scale);
+  captureCanvas.width = outW;
+  captureCanvas.height = outH;
+  captureCanvas.getContext('2d').drawImage(modalCameraVideo, 0, 0, outW, outH);
+  const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.82);
 
   stopCamera();
   state.pendingCover = dataUrl;
@@ -931,6 +941,7 @@ const FIREBASE_CONFIG = {
 };
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
+const db = firebase.firestore();
 
 const profileAvatarIcon = document.getElementById('profile-avatar-icon');
 const profileDefaultIcon = document.getElementById('profile-default-icon');
@@ -941,7 +952,7 @@ const profileName = document.getElementById('profile-name');
 const profileEmail = document.getElementById('profile-email');
 const profileStatus = document.getElementById('profile-status');
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
   profileSignedOut.hidden = !!user;
   profileSignedIn.hidden = !user;
   if (user) {
@@ -951,11 +962,84 @@ auth.onAuthStateChanged((user) => {
     profileAvatar.src = user.photoURL || '';
     profileName.textContent = user.displayName || '';
     profileEmail.textContent = user.email || '';
+    await migrateLocalCollectionToCloud(user.uid);
+    startCloudSync(user.uid);
   } else {
     profileAvatarIcon.hidden = true;
     profileDefaultIcon.hidden = false;
+    stopCloudSync();
+    state.collection = loadCollection();
+    renderCollection();
   }
 });
+
+/* =========================================================
+   Discothèque dans le cloud (Firestore) — une fois connecté,
+   chaque disque est un document sous users/{uid}/records/{id},
+   synchronisé en temps réel. Déconnecté, on retombe sur le
+   stockage local du navigateur (comportement d'origine).
+   ========================================================= */
+let cloudUnsubscribe = null;
+
+function recordsRef(uid) {
+  return db.collection('users').doc(uid).collection('records');
+}
+
+function currentUid() {
+  return auth.currentUser ? auth.currentUser.uid : null;
+}
+
+async function migrateLocalCollectionToCloud(uid) {
+  try {
+    const existing = await recordsRef(uid).limit(1).get();
+    if (!existing.empty) return;
+    const local = loadCollection();
+    if (local.length === 0) return;
+    const batch = db.batch();
+    local.forEach((record) => batch.set(recordsRef(uid).doc(record.id), record));
+    await batch.commit();
+  } catch (err) {
+    console.warn('Migration vers le cloud impossible', err);
+  }
+}
+
+function startCloudSync(uid) {
+  stopCloudSync();
+  cloudUnsubscribe = recordsRef(uid).onSnapshot(
+    (snapshot) => {
+      state.collection = snapshot.docs
+        .map((doc) => doc.data())
+        .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+      renderCollection();
+    },
+    (err) => console.warn('Synchronisation cloud impossible', err)
+  );
+}
+
+function stopCloudSync() {
+  if (cloudUnsubscribe) {
+    cloudUnsubscribe();
+    cloudUnsubscribe = null;
+  }
+}
+
+async function saveRecord(record) {
+  const uid = currentUid();
+  if (uid) {
+    await recordsRef(uid).doc(record.id).set(record);
+  } else {
+    saveCollection();
+  }
+}
+
+async function deleteRecord(id) {
+  const uid = currentUid();
+  if (uid) {
+    await recordsRef(uid).doc(id).delete();
+  } else {
+    saveCollection();
+  }
+}
 
 document.getElementById('btn-google-signin').addEventListener('click', async () => {
   profileStatus.textContent = '';
@@ -1153,15 +1237,16 @@ recordForm.addEventListener('submit', (e) => {
   } else {
     state.collection.unshift(record);
   }
-  saveCollection();
+  saveRecord(record);
   closeModal();
   renderCollection();
 });
 
 btnDelete.addEventListener('click', () => {
   if (!state.editingId) return;
-  state.collection = state.collection.filter((r) => r.id !== state.editingId);
-  saveCollection();
+  const idToDelete = state.editingId;
+  state.collection = state.collection.filter((r) => r.id !== idToDelete);
+  deleteRecord(idToDelete);
   closeModal();
   renderCollection();
 });
