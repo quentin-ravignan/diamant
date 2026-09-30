@@ -441,7 +441,7 @@ function openVinylModal(vinyl) {
   `).join('');
 
   const query = `${vinyl.artist} ${vinyl.title}`;
-  vinylLinks.innerHTML = ['discogs', 'leboncoin', 'fnac'].map((source) => `
+  vinylLinks.innerHTML = ['leboncoin', 'discogs', 'fnac'].map((source) => `
     <a href="${EXTERNAL_SEARCH_URLS[source](query)}" target="_blank" rel="noopener">
       <img src="${SOURCE_FAVICONS[source]}" alt="" class="source-favicon" onerror="this.remove()">
       Voir sur ${SOURCE_LABELS[source]}
