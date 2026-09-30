@@ -958,7 +958,7 @@ auth.onAuthStateChanged(async (user) => {
   if (user) {
     profileAvatarIcon.src = user.photoURL || '';
     profileAvatarIcon.hidden = !user.photoURL;
-    profileDefaultIcon.hidden = !!user.photoURL;
+    profileDefaultIcon.toggleAttribute('hidden', !!user.photoURL);
     profileAvatar.src = user.photoURL || '';
     profileName.textContent = user.displayName || '';
     profileEmail.textContent = user.email || '';
@@ -966,7 +966,7 @@ auth.onAuthStateChanged(async (user) => {
     startCloudSync(user.uid);
   } else {
     profileAvatarIcon.hidden = true;
-    profileDefaultIcon.hidden = false;
+    profileDefaultIcon.toggleAttribute('hidden', false);
     stopCloudSync();
     state.collection = loadCollection();
     renderCollection();
