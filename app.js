@@ -54,6 +54,7 @@ const I18N = {
     back_aria: 'Back',
     close_aria: 'Close',
     capture_aria: 'Capture',
+    vinyl_local_label: 'Nearby record shops (illustrative — stock not verified):',
     vinyl_online_label: 'Find it online:',
     link_view_on: 'View on {source}',
     shop_phone_unknown: 'Phone number not provided',
@@ -140,6 +141,7 @@ const I18N = {
     back_aria: 'Retour',
     close_aria: 'Fermer',
     capture_aria: 'Capturer',
+    vinyl_local_label: 'Disquaires à proximité (indicatif — stock non vérifié) :',
     vinyl_online_label: 'Le trouver en ligne :',
     link_view_on: 'Voir sur {source}',
     shop_phone_unknown: 'Numéro non renseigné',
@@ -510,58 +512,64 @@ document.querySelectorAll('.city-chips .chip').forEach((chip) => {
   });
 });
 
+/* Interroge Overpass (OpenStreetMap) pour les disquaires dans un rayon
+   donné et renvoie des objets shop bruts — sans toucher au DOM, pour
+   être réutilisable par le panneau Recherche et par la fiche album. */
+async function fetchNearbyRecordShops(lat, lon) {
+  const radius = 5000;
+  const query = `[out:json][timeout:15];(node["shop"="music"](around:${radius},${lat},${lon});node["shop"="records"](around:${radius},${lat},${lon}););out body;`;
+  const res = await fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    body: 'data=' + encodeURIComponent(query),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+  if (!res.ok) throw new Error('Overpass ' + res.status);
+  const data = await res.json();
+  const elements = (data.elements || []).filter((el) => el.lat && el.lon);
+
+  return elements.map((el) => {
+    const tags = el.tags || {};
+    const addr = [tags['addr:housenumber'], tags['addr:street'], tags['addr:postcode'], tags['addr:city']]
+      .filter(Boolean).join(' ');
+    return {
+      id: 'osm-' + el.id,
+      name: tags.name || t('shop_unnamed'),
+      address: addr,
+      phone: tags['contact:phone'] || tags.phone || '',
+      website: tags['contact:website'] || tags.website || '',
+      distance: haversineKm(lat, lon, el.lat, el.lon).toFixed(1),
+      lat: el.lat,
+      lon: el.lon,
+      inventory: [],
+    };
+  });
+}
+
 async function findNearbyRecordShops(lat, lon) {
   locateStatus.textContent = t('shops_loading');
   shopList.innerHTML = '';
   state.shops = {};
-  const radius = 5000;
-  const query = `[out:json][timeout:15];(node["shop"="music"](around:${radius},${lat},${lon});node["shop"="records"](around:${radius},${lat},${lon}););out body;`;
   try {
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: 'data=' + encodeURIComponent(query),
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-    if (!res.ok) throw new Error('Overpass ' + res.status);
-    const data = await res.json();
-    const elements = (data.elements || []).filter((el) => el.lat && el.lon);
-
-    if (!elements.length) {
+    const shops = await fetchNearbyRecordShops(lat, lon);
+    if (!shops.length) {
       locateStatus.textContent = t('shops_none');
       return;
     }
-    locateStatus.textContent = t('shops_found', { n: elements.length });
+    locateStatus.textContent = t('shops_found', { n: shops.length });
 
-    elements.forEach((el) => {
-      const tags = el.tags || {};
-      const name = tags.name || t('shop_unnamed');
-      const addr = [tags['addr:housenumber'], tags['addr:street'], tags['addr:postcode'], tags['addr:city']]
-        .filter(Boolean).join(' ');
-      const distance = haversineKm(lat, lon, el.lat, el.lon).toFixed(1);
-
-      const shop = {
-        id: 'osm-' + el.id,
-        name,
-        address: addr,
-        phone: tags['contact:phone'] || tags.phone || '',
-        website: tags['contact:website'] || tags.website || '',
-        distance,
-        lat: el.lat,
-        lon: el.lon,
-        inventory: [],
-      };
+    shops.forEach((shop) => {
       state.shops[shop.id] = shop;
 
-      const marker = L.marker([el.lat, el.lon]).addTo(markersLayer);
-      marker.bindPopup(`<strong>${escapeHtml(name)}</strong><br>${escapeHtml(addr || '')}`);
+      const marker = L.marker([shop.lat, shop.lon]).addTo(markersLayer);
+      marker.bindPopup(`<strong>${escapeHtml(shop.name)}</strong><br>${escapeHtml(shop.address || '')}`);
       marker.on('click', () => openShopModal(shop.id));
 
       const li = document.createElement('li');
       li.dataset.shopId = shop.id;
-      const dirUrl = `https://www.openstreetmap.org/directions?from=${lat}%2C${lon}&to=${el.lat}%2C${el.lon}`;
+      const dirUrl = `https://www.openstreetmap.org/directions?from=${lat}%2C${lon}&to=${shop.lat}%2C${shop.lon}`;
       li.innerHTML = `
-        <span class="shop-name">${escapeHtml(name)}</span>
-        <span class="shop-meta">${escapeHtml(addr || t('shop_no_address'))} · ${distance} km</span><br>
+        <span class="shop-name">${escapeHtml(shop.name)}</span>
+        <span class="shop-meta">${escapeHtml(shop.address || t('shop_no_address'))} · ${shop.distance} km</span><br>
         <a href="${dirUrl}" target="_blank" rel="noopener" data-no-modal>${t('directions')}</a>
       `;
       li.addEventListener('click', (e) => {
@@ -682,6 +690,73 @@ shopInventoryFilter.addEventListener('input', () => {
 const vinylModalBackdrop = document.getElementById('vinyl-modal-backdrop');
 const vinylModalTitle = document.getElementById('vinyl-modal-title');
 const vinylLinks = document.getElementById('vinyl-links');
+const vinylMap_el = document.getElementById('vinyl-map');
+const vinylShopsStatus = document.getElementById('vinyl-shops-status');
+const vinylShopList = document.getElementById('vinyl-shop-list');
+
+let vinylMap = null;
+let vinylMarkersLayer = null;
+
+function initVinylMapIfNeeded() {
+  if (vinylMap) return;
+  vinylMap = L.map(vinylMap_el, { zoomControl: false, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(vinylMap);
+  vinylMarkersLayer = L.layerGroup().addTo(vinylMap);
+}
+
+/* Disquaires réels (OpenStreetMap) autour de la dernière position connue,
+   affichés comme pistes théoriques pour trouver ce disque : on n'a aucune
+   donnée de stock réelle par titre, donc on ne prétend jamais qu'un de ces
+   magasins l'a vraiment en rayon — d'où le libellé "indicatif". */
+async function renderVinylNearbyShops(vinyl) {
+  const center = state.lastPosition || { lat: 48.8566, lon: 2.3522 };
+  vinylShopList.hidden = true;
+  vinylShopsStatus.hidden = false;
+  vinylShopsStatus.textContent = t('shops_loading');
+
+  let shops = Object.values(state.shops);
+  if (!shops.length) {
+    try {
+      shops = await fetchNearbyRecordShops(center.lat, center.lon);
+      shops.forEach((s) => { state.shops[s.id] = s; });
+    } catch (err) {
+      console.warn(err);
+      vinylShopsStatus.textContent = t('shops_error');
+      return;
+    }
+  }
+
+  if (!shops.length) {
+    vinylShopsStatus.textContent = t('shops_none');
+    return;
+  }
+
+  const nearest = shops.slice().sort((a, b) => a.distance - b.distance).slice(0, 5);
+  vinylShopsStatus.hidden = true;
+  vinylShopList.hidden = false;
+  vinylShopList.innerHTML = nearest.map((s) => `
+    <li data-shop-id="${s.id}">
+      <span class="shop-name">${escapeHtml(s.name)}</span>
+      <span class="shop-meta">${escapeHtml(s.address || t('shop_no_address'))} · ${s.distance} km</span>
+    </li>
+  `).join('');
+  vinylShopList.querySelectorAll('li').forEach((li) => {
+    li.addEventListener('click', () => openShopModal(li.dataset.shopId));
+  });
+
+  requestAnimationFrame(() => {
+    initVinylMapIfNeeded();
+    vinylMap.invalidateSize();
+    vinylMap.setView([center.lat, center.lon], 13);
+    vinylMarkersLayer.clearLayers();
+    L.marker([center.lat, center.lon]).addTo(vinylMarkersLayer).bindPopup('📍');
+    nearest.forEach((s) => {
+      L.marker([s.lat, s.lon]).addTo(vinylMarkersLayer)
+        .bindPopup(`<strong>${escapeHtml(s.name)}</strong>`)
+        .on('click', () => openShopModal(s.id));
+    });
+  });
+}
 
 function openVinylModal(vinyl) {
   vinylModalTitle.textContent = vinyl.year ? `${vinyl.artist} — ${vinyl.title} (${vinyl.year})` : `${vinyl.artist} — ${vinyl.title}`;
@@ -695,6 +770,7 @@ function openVinylModal(vinyl) {
   `).join('');
 
   vinylModalBackdrop.hidden = false;
+  renderVinylNearbyShops(vinyl);
 }
 
 document.getElementById('vinyl-modal-close').addEventListener('click', () => { vinylModalBackdrop.hidden = true; });
