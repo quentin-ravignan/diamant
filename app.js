@@ -300,6 +300,7 @@ function navigateTo(target, isScanAction) {
     b.classList.toggle('is-active', b.dataset.panelTarget === target && b.dataset.action !== 'scan');
   });
   bottombar.hidden = false;
+  document.querySelector('.app').classList.add('has-bottombar');
   if (target === 'panel-collection') renderCollection();
   if (target === 'panel-recherche' && !hasAutoLocated) {
     hasAutoLocated = true;
@@ -1350,10 +1351,21 @@ function normalizeForMatch(s) {
   return (s || '').toLowerCase().replace(/['’]/g, "'").replace(/^the\s+/, '').trim();
 }
 
+/* Rempli au fil des réponses iTunes ; sert à ouvrir la fiche album au clic
+   sur une pochette de la home (même fiche que pour un résultat de
+   recherche). */
+const homeAlbumData = new Array(HOME_ALBUMS.length).fill(null);
+
 async function loadHomeGrid() {
   const grid = document.getElementById('home-grid');
-  grid.innerHTML = HOME_ALBUMS.map(() => `<div class="home-cover">${vinylPlaceholderSvg()}</div>`).join('');
+  grid.innerHTML = HOME_ALBUMS.map(() => `<button type="button" class="home-cover">${vinylPlaceholderSvg()}</button>`).join('');
   const cells = grid.children;
+
+  Array.from(cells).forEach((cell, i) => {
+    cell.addEventListener('click', () => {
+      if (homeAlbumData[i]) openVinylModal(homeAlbumData[i]);
+    });
+  });
 
   HOME_ALBUMS.forEach(async (album, i) => {
     try {
@@ -1379,6 +1391,13 @@ async function loadHomeGrid() {
       if (!artwork) return;
       const hiRes = artwork.replace('100x100bb', '600x600bb');
       cells[i].innerHTML = `<img src="${hiRes}" alt="${escapeHtml(album.artist)} – ${escapeHtml(album.title)}" loading="lazy">`;
+      homeAlbumData[i] = {
+        artist: album.artist,
+        title: album.title,
+        year: match.releaseDate ? new Date(match.releaseDate).getFullYear() : '',
+        genre: match.primaryGenreName || '',
+        cover: hiRes,
+      };
     } catch (err) {
       console.warn(err);
     }
@@ -1396,9 +1415,19 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+/* Mesure la vraie hauteur de la topbar (police/zoom variables) pour que
+   #panel-home puisse occuper exactement le reste de l'écran sans scroller. */
+function updateTopbarHeightVar() {
+  const h = document.querySelector('.topbar').getBoundingClientRect().height;
+  if (h > 0) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+}
+window.addEventListener('resize', updateTopbarHeightVar);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateTopbarHeightVar);
+
 /* =========================================================
    Init
    ========================================================= */
 seedDemoCollectionIfNeeded();
 applyI18n();
 loadHomeGrid();
+updateTopbarHeightVar();
